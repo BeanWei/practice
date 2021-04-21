@@ -5,5 +5,9 @@ package debug
 // Pet is the model entity for the Pet schema.
 type Pet struct {
 	// Name holds the value of the "name" field.
+	// required#请输入宠物的名字
+	// true
+	// false
+	// true
 	Name string `json:"name,omitempty"`
 }
