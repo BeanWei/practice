@@ -11,8 +11,8 @@ type Annotation struct {
 	Creatable bool
 	// 可更新
 	Updatable bool
-	// 可读取
-	Readable bool
+	// 可检索
+	Searchable bool
 }
 
 // Name describes the annotation name.

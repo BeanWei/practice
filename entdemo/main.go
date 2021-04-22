@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"entdemo/ent"
-	"entdemo/ent/entrest"
 	"log"
 
 	"github.com/gogf/gf/frame/g"
@@ -22,7 +21,7 @@ func main() {
 		g.Log().Fatalf("failed creating schema resources: %v", err)
 	}
 
-	entrest.NewPetServiceHandler(client)
+	// entrest.NewPetServiceHandler(client)
 
 	s := g.Server()
 	s.Run()

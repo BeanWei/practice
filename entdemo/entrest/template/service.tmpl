@@ -1,17 +1,35 @@
 package entrest
 
-// {{ $.Name }} is the model entity for the {{ $.Name }} schema.
-type {{ $.Name }} struct {
+import (
+	"entdemo/ent"
+	"entdemo/entrest"
+
+	"github.com/gogf/gf/frame/g"
+	"github.com/gogf/gf/net/ghttp"
+)
+
+// List{{ $.Name }}Request .
+type List{{ $.Name }}Request struct {
+	PageSize  int    `json:"pageSize,omitempty"`
+	PageToken int    `json:"pageToken,omitempty"`
+	Sort      string `json:"sort,omitempty"`
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
-        {{- if $annotation := $f.Annotations.EntREST }}
-            {{- if $annotation.Readable }}
-                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
+        {{- if not $f.Sensitive }}
+            {{- if $annotation := $f.Annotations.EntREST }}
+                {{- if $annotation.Searchable }}
+                    {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} `{{ $tag }}`
+                {{- end }}
+            {{- else }}
+                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} `{{ $tag }}`
             {{- end }}
-        {{- else }}
-            {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
         {{- end }}
     {{- end }}
+}
+
+// Get{{ $.Name }}Request .
+type Get{{ $.Name }}Request struct {
+    ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
 }
 
 // Create{{ $.Name }}Request .
@@ -53,14 +71,158 @@ type Delete{{ $.Name }}Request struct {
     ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
 }
 
-// Get{{ $.Name }}Request .
-type Get{{ $.Name }}Request struct {
-    ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
-}
+func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
+	s := g.Server()
 
-// List{{ $.Name }}Request .
-type ListPetRequest struct {
-    PageSize int    `json:"pageSize,omitempty"`
-    PageNum  int    `json:"pageNum,omitempty"`
-    Sort     string `json:"sort,omitempty"`
+    s.BindHandler("GET:/api/{{ snake $.Name }}", func(r *ghttp.Request) {
+		var req List{{ $.Name }}Request
+		if err := r.Parse(&req); err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
+		}
+
+		res, err := client.{{ $.Name }}.
+			Query().
+			Limit(req.PageSize).
+			Offset((req.PageToken - 1) * req.PageSize).
+			All(r.Context())
+		if err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorList,
+				Error:     err,
+			})
+		}
+		respHandler(r, &entrest.Result{
+			Data:   res,
+			IsList: true,
+		})
+	})
+
+    s.BindHandler("GET:/api/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
+		var req Get{{ $.Name }}Request
+		if err := r.Parse(&req); err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
+		}
+
+		id := r.GetInt("id")
+		res, err := client.{{ $.Name }}.
+			Get(r.Context(), id)
+		if err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorGet,
+				Error:     err,
+			})
+		}
+		respHandler(r, &entrest.Result{
+			Data: res,
+		})
+	})
+
+	s.BindHandler("POST:/api/{{ snake $.Name }}", func(r *ghttp.Request) {
+		var req Create{{ $.Name }}Request
+		if err := r.Parse(&req); err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
+		}
+
+		res, err := client.{{ $.Name }}.
+			Create().
+            {{- range $f := $.Fields }}
+                {{- if $annotation := $f.Annotations.EntREST }}
+                    {{- if $annotation.Creatable }}
+                        {{- if $f.NillableValue }}
+                            SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
+                        {{- else }}
+                            Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                        {{- end }}
+                    {{- end }}
+                {{- else }}
+                    {{- if $f.NillableValue }}
+                        SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
+                    {{- else }}
+                        Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                    {{- end }}
+                {{- end }}
+            {{- end }}
+			Save(r.Context())
+		if err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorCreate,
+				Error:     err,
+			})
+		}
+		respHandler(r, &entrest.Result{
+			Data: res,
+		})
+	})
+
+	s.BindHandler("PUT:/api/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
+		var req Update{{ $.Name }}Request
+		if err := r.Parse(&req); err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
+		}
+
+		id := r.GetInt("id")
+		res, err := client.{{ $.Name }}.
+			UpdateOneID(id).
+			{{- range $f := $.Fields }}
+                {{- if $annotation := $f.Annotations.EntREST }}
+                    {{- if $annotation.Updatable }}
+                        {{- if $f.NillableValue }}
+                            SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
+                        {{- else }}
+                            Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                        {{- end }}
+                    {{- end }}
+                {{- else }}
+                    {{- if $f.NillableValue }}
+                        SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
+                    {{- else }}
+                        Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                    {{- end }}
+                {{- end }}
+            {{- end }}
+			Save(r.Context())
+		if err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorUpdate,
+				Error:     err,
+			})
+		}
+		respHandler(r, &entrest.Result{
+			Data: res,
+		})
+	})
+
+	s.BindHandler("DELETE:/api/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
+		var req Delete{{ $.Name }}Request
+		if err := r.Parse(&req); err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
+		}
+
+		id := r.GetInt("id")
+		err := client.{{ $.Name }}.
+			DeleteOneID(id).
+			Exec(r.Context())
+		if err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorDelete,
+				Error:     err,
+			})
+		}
+		respHandler(r, &entrest.Result{})
+	})
 }

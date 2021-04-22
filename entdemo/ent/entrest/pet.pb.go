@@ -2,15 +2,11 @@ package entrest
 
 import (
 	"entdemo/ent"
+	"entdemo/entrest"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 )
-
-type Pet struct {
-	ID   int    `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-}
 
 type CreatePetRequest struct {
 	Name string `json:"name,omitempty" v:"required#请输入宠物名字"`
@@ -30,34 +26,21 @@ type GetPetRequest struct {
 }
 
 type ListPetRequest struct {
-	PageSize int    `json:"pageSize,omitempty"`
-	PageNum  int    `json:"pageNum,omitempty"`
-	Sort     string `json:"sort,omitempty"`
+	PageSize  int    `json:"pageSize,omitempty"`
+	PageToken int    `json:"pageToken,omitempty"`
+	Sort      string `json:"sort,omitempty"`
 }
 
-// toProtoPet transforms the ent type to the pb type
-func toProtoPet(e *ent.Pet) *Pet {
-	return &Pet{
-		ID:   e.ID,
-		Name: e.Name,
-	}
-}
-
-// type PetServiceHandler interface {
-// 	CreatePet(context.Context, *CreatePetRequest) (*Pet, error)
-// 	UpdatePet(context.Context, *UpdatePetRequest) (*Pet, error)
-// 	DeletePet(context.Context, *DeletePetRequest) error
-// 	GetPet(context.Context, *GetPetRequest) (*Pet, error)
-// 	ListPet(context.Context, *ListPetRequest) ([]*Pet, error)
-// }
-
-func NewPetServiceHandler(client *ent.Client) {
+func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
 	s := g.Server()
 
 	s.BindHandler("POST:/api/pet", func(r *ghttp.Request) {
 		var req CreatePetRequest
 		if err := r.Parse(&req); err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
 		}
 
 		res, err := client.Pet.
@@ -65,15 +48,23 @@ func NewPetServiceHandler(client *ent.Client) {
 			SetName(req.Name).
 			Save(r.Context())
 		if err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorCreate,
+				Error:     err,
+			})
 		}
-		r.Response.WriteExit(res)
+		respHandler(r, &entrest.Result{
+			Data: res,
+		})
 	})
 
 	s.BindHandler("PUT:/api/pet/{id}", func(r *ghttp.Request) {
 		var req UpdatePetRequest
 		if err := r.Parse(&req); err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
 		}
 
 		id := r.GetInt("id")
@@ -82,15 +73,23 @@ func NewPetServiceHandler(client *ent.Client) {
 			SetName(req.Name).
 			Save(r.Context())
 		if err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorUpdate,
+				Error:     err,
+			})
 		}
-		r.Response.WriteExit(res)
+		respHandler(r, &entrest.Result{
+			Data: res,
+		})
 	})
 
 	s.BindHandler("DELETE:/api/pet/{id}", func(r *ghttp.Request) {
-		var req CreatePetRequest
+		var req DeletePetRequest
 		if err := r.Parse(&req); err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
 		}
 
 		id := r.GetInt("id")
@@ -98,40 +97,60 @@ func NewPetServiceHandler(client *ent.Client) {
 			DeleteOneID(id).
 			Exec(r.Context())
 		if err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorDelete,
+				Error:     err,
+			})
 		}
-		r.Response.WriteExit()
+		respHandler(r, &entrest.Result{})
 	})
 
 	s.BindHandler("GET:/api/pet/{id}", func(r *ghttp.Request) {
-		var req CreatePetRequest
+		var req GetPetRequest
 		if err := r.Parse(&req); err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
 		}
 
 		id := r.GetInt("id")
 		res, err := client.Pet.
 			Get(r.Context(), id)
 		if err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorGet,
+				Error:     err,
+			})
 		}
-		r.Response.WriteExit(res)
+		respHandler(r, &entrest.Result{
+			Data: res,
+		})
 	})
 
 	s.BindHandler("GET:/api/pet", func(r *ghttp.Request) {
 		var req ListPetRequest
 		if err := r.Parse(&req); err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorParameterBind,
+				Error:     err,
+			})
 		}
 
 		res, err := client.Pet.
 			Query().
 			Limit(req.PageSize).
-			Offset((req.PageNum - 1) * req.PageSize).
+			Offset((req.PageToken - 1) * req.PageSize).
 			All(r.Context())
 		if err != nil {
-			r.Response.WriteExit(err.Error())
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorList,
+				Error:     err,
+			})
 		}
-		r.Response.WriteExit(res)
+		respHandler(r, &entrest.Result{
+			Data:   res,
+			IsList: true,
+		})
 	})
 }
