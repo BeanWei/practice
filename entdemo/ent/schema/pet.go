@@ -20,7 +20,7 @@ func (Pet) Fields() []ent.Field {
 				entrest.Annotation{
 					Validate:  "required#请输入宠物的名字",
 					Creatable: true,
-					Updatable: false,
+					Updatable: true,
 					Readable:  true,
 				},
 			),
