@@ -1,76 +1,66 @@
-{{ define "debug/debug" }}
+package entrest
 
-{{- with extend $ "Package" "debug" -}}
-	{{ template "header" . }}
-{{ end }}
-
-{{ range $n := $.Nodes }}
-    // {{ $n.Name }} is the model entity for the {{ $n.Name }} schema.
-    type {{ $n.Name }} struct {
-        {{- range $f := $n.Fields }}
-            {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
-            {{- template "model/fieldcomment" $f }}
-            {{- if $annotation := $f.Annotations.EntREST }}
-                {{- if $annotation.Readable }}
-                    {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}{{ template "model/omittags" $ }}{{ end }}
-                {{- end }}
-            {{- else }}
-                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}{{ template "model/omittags" $ }}{{ end }}
+// {{ $.Name }} is the model entity for the {{ $.Name }} schema.
+type {{ $.Name }} struct {
+    {{- range $f := $.Fields }}
+        {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
+        {{- if $annotation := $f.Annotations.EntREST }}
+            {{- if $annotation.Readable }}
+                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
             {{- end }}
+        {{- else }}
+            {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
         {{- end }}
-    }
+    {{- end }}
+}
 
-    // Create{{ $n.Name }}Request .
-    type Create{{ $n.Name }}Request struct {
-        {{- range $f := $n.Fields }}
-            {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
-            {{- if $annotation := $f.Annotations.EntREST }}
-                {{- if $annotation.Creatable }}
-                    {{- if $annotation.Validate}}
-                        {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
-                    {{- end }}
-                    {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}{{ template "model/omittags" $ }}{{ end }}
+// Create{{ $.Name }}Request .
+type Create{{ $.Name }}Request struct {
+    {{- range $f := $.Fields }}
+        {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
+        {{- if $annotation := $f.Annotations.EntREST }}
+            {{- if $annotation.Creatable }}
+                {{- if $annotation.Validate}}
+                    {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
-            {{- else }}
-                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}{{ template "model/omittags" $ }}{{ end }}
+                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
             {{- end }}
+        {{- else }}
+            {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
         {{- end }}
-    }
+    {{- end }}
+}
 
-    // Update{{ $n.Name }}Request .
-    type Update{{ $n.Name }}Request struct {
-        {{- range $f := $n.Fields }}
-            {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
-            {{- if $annotation := $f.Annotations.EntREST }}
-                {{- if $annotation.Updatable }}
-                    {{- if $annotation.Validate}}
-                        {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
-                    {{- end }}
-                    {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}{{ template "model/omittags" $ }}{{ end }}
+// Update{{ $.Name }}Request .
+type Update{{ $.Name }}Request struct {
+    {{- range $f := $.Fields }}
+        {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
+        {{- if $annotation := $f.Annotations.EntREST }}
+            {{- if $annotation.Updatable }}
+                {{- if $annotation.Validate}}
+                    {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
-            {{- else }}
-                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}{{ template "model/omittags" $ }}{{ end }}
+                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
             {{- end }}
+        {{- else }}
+            {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
         {{- end }}
-    }
+    {{- end }}
+}
 
-    // Delete{{ $n.Name }}Request .
-    type Delete{{ $n.Name }}Request struct {
-        ID {{ $n.ID.Type }} {{ with $n.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $n.ID.StructTag }}`{{ end }}
-    }
+// Delete{{ $.Name }}Request .
+type Delete{{ $.Name }}Request struct {
+    ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
+}
 
-    // Get{{ $n.Name }}Request .
-    type Get{{ $n.Name }}Request struct {
-        ID {{ $n.ID.Type }} {{ with $n.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $n.ID.StructTag }}`{{ end }}
-    }
+// Get{{ $.Name }}Request .
+type Get{{ $.Name }}Request struct {
+    ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
+}
 
-    // List{{ $n.Name }}Request .
-    type ListPetRequest struct {
-        PageSize int    `json:"pageSize,omitempty"`
-        PageNum  int    `json:"pageNum,omitempty"`
-        Sort     string `json:"sort,omitempty"`
-    }
-
-{{ end }}
-
-{{ end }}
+// List{{ $.Name }}Request .
+type ListPetRequest struct {
+    PageSize int    `json:"pageSize,omitempty"`
+    PageNum  int    `json:"pageNum,omitempty"`
+    Sort     string `json:"sort,omitempty"`
+}
