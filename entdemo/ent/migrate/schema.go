@@ -18,13 +18,21 @@ var (
 		{Name: "updated_by", Type: field.TypeString, Nullable: true},
 		{Name: "remark", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
+		{Name: "user_pets", Type: field.TypeString, Nullable: true},
 	}
 	// PetsTable holds the schema information for the "pets" table.
 	PetsTable = &schema.Table{
-		Name:        "pets",
-		Columns:     PetsColumns,
-		PrimaryKey:  []*schema.Column{PetsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "pets",
+		Columns:    PetsColumns,
+		PrimaryKey: []*schema.Column{PetsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "pets_users_pets",
+				Columns:    []*schema.Column{PetsColumns[8]},
+				RefColumns: []*schema.Column{UsersColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// UsersColumns holds the columns for the "users" table.
 	UsersColumns = []*schema.Column{
@@ -53,4 +61,5 @@ var (
 )
 
 func init() {
+	PetsTable.ForeignKeys[0].RefTable = UsersTable
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/gogf/gf/net/ghttp"
 )
 
+// test
+
 // ListUserRequest .
 type ListUserRequest struct {
 	PageSize  int     `json:"pageSize,omitempty"`

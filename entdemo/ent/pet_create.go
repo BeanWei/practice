@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"entdemo/ent/pet"
+	"entdemo/ent/user"
 	"errors"
 	"fmt"
 	"time"
@@ -122,6 +123,25 @@ func (pc *PetCreate) SetNillableID(s *string) *PetCreate {
 		pc.SetID(*s)
 	}
 	return pc
+}
+
+// SetOwnerID sets the "owner" edge to the User entity by ID.
+func (pc *PetCreate) SetOwnerID(id string) *PetCreate {
+	pc.mutation.SetOwnerID(id)
+	return pc
+}
+
+// SetNillableOwnerID sets the "owner" edge to the User entity by ID if the given value is not nil.
+func (pc *PetCreate) SetNillableOwnerID(id *string) *PetCreate {
+	if id != nil {
+		pc = pc.SetOwnerID(*id)
+	}
+	return pc
+}
+
+// SetOwner sets the "owner" edge to the User entity.
+func (pc *PetCreate) SetOwner(u *User) *PetCreate {
+	return pc.SetOwnerID(u.ID)
 }
 
 // Mutation returns the PetMutation object of the builder.
@@ -285,6 +305,26 @@ func (pc *PetCreate) createSpec() (*Pet, *sqlgraph.CreateSpec) {
 			Column: pet.FieldName,
 		})
 		_node.Name = value
+	}
+	if nodes := pc.mutation.OwnerIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   pet.OwnerTable,
+			Columns: []string{pet.OwnerColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeString,
+					Column: user.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_pets = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

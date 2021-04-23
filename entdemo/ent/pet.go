@@ -4,6 +4,7 @@ package ent
 
 import (
 	"entdemo/ent/pet"
+	"entdemo/ent/user"
 	"fmt"
 	"strings"
 	"time"
@@ -38,6 +39,33 @@ type Pet struct {
 	// Name holds the value of the "name" field.
 	// 宠物名字
 	Name string `json:"name,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the PetQuery when eager-loading is set.
+	Edges     PetEdges `json:"edges"`
+	user_pets *string
+}
+
+// PetEdges holds the relations/edges for other nodes in the graph.
+type PetEdges struct {
+	// Owner holds the value of the owner edge.
+	Owner *User `json:"owner,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// OwnerOrErr returns the Owner value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PetEdges) OwnerOrErr() (*User, error) {
+	if e.loadedTypes[0] {
+		if e.Owner == nil {
+			// The edge owner was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: user.Label}
+		}
+		return e.Owner, nil
+	}
+	return nil, &NotLoadedError{edge: "owner"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -49,6 +77,8 @@ func (*Pet) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullString)
 		case pet.FieldCreatedAt, pet.FieldUpdatedAt, pet.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
+		case pet.ForeignKeys[0]: // user_pets
+			values[i] = new(sql.NullString)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Pet", columns[i])
 		}
@@ -113,9 +143,21 @@ func (pe *Pet) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				pe.Name = value.String
 			}
+		case pet.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field user_pets", values[i])
+			} else if value.Valid {
+				pe.user_pets = new(string)
+				*pe.user_pets = value.String
+			}
 		}
 	}
 	return nil
+}
+
+// QueryOwner queries the "owner" edge of the Pet entity.
+func (pe *Pet) QueryOwner() *UserQuery {
+	return (&PetClient{config: pe.config}).QueryOwner(pe)
 }
 
 // Update returns a builder for updating this Pet.
