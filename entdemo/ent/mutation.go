@@ -8,6 +8,7 @@ import (
 	"entdemo/ent/predicate"
 	"fmt"
 	"sync"
+	"time"
 
 	"entgo.io/ent"
 )
@@ -29,7 +30,13 @@ type PetMutation struct {
 	config
 	op            Op
 	typ           string
-	id            *int
+	id            *string
+	createdAt     *time.Time
+	updatedAt     *time.Time
+	deletedAt     *time.Time
+	createdBy     *string
+	updatedBy     *string
+	remark        *string
 	name          *string
 	clearedFields map[string]struct{}
 	done          bool
@@ -57,7 +64,7 @@ func newPetMutation(c config, op Op, opts ...petOption) *PetMutation {
 }
 
 // withPetID sets the ID field of the mutation.
-func withPetID(id int) petOption {
+func withPetID(id string) petOption {
 	return func(m *PetMutation) {
 		var (
 			err   error
@@ -107,13 +114,287 @@ func (m PetMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of Pet entities.
+func (m *PetMutation) SetID(id string) {
+	m.id = &id
+}
+
 // ID returns the ID value in the mutation. Note that the ID
 // is only available if it was provided to the builder.
-func (m *PetMutation) ID() (id int, exists bool) {
+func (m *PetMutation) ID() (id string, exists bool) {
 	if m.id == nil {
 		return
 	}
 	return *m.id, true
+}
+
+// SetCreatedAt sets the "createdAt" field.
+func (m *PetMutation) SetCreatedAt(t time.Time) {
+	m.createdAt = &t
+}
+
+// CreatedAt returns the value of the "createdAt" field in the mutation.
+func (m *PetMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.createdAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "createdAt" field's value of the Pet entity.
+// If the Pet object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PetMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "createdAt" field.
+func (m *PetMutation) ResetCreatedAt() {
+	m.createdAt = nil
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (m *PetMutation) SetUpdatedAt(t time.Time) {
+	m.updatedAt = &t
+}
+
+// UpdatedAt returns the value of the "updatedAt" field in the mutation.
+func (m *PetMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updatedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updatedAt" field's value of the Pet entity.
+// If the Pet object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PetMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updatedAt" field.
+func (m *PetMutation) ResetUpdatedAt() {
+	m.updatedAt = nil
+}
+
+// SetDeletedAt sets the "deletedAt" field.
+func (m *PetMutation) SetDeletedAt(t time.Time) {
+	m.deletedAt = &t
+}
+
+// DeletedAt returns the value of the "deletedAt" field in the mutation.
+func (m *PetMutation) DeletedAt() (r time.Time, exists bool) {
+	v := m.deletedAt
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDeletedAt returns the old "deletedAt" field's value of the Pet entity.
+// If the Pet object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PetMutation) OldDeletedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldDeletedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldDeletedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDeletedAt: %w", err)
+	}
+	return oldValue.DeletedAt, nil
+}
+
+// ClearDeletedAt clears the value of the "deletedAt" field.
+func (m *PetMutation) ClearDeletedAt() {
+	m.deletedAt = nil
+	m.clearedFields[pet.FieldDeletedAt] = struct{}{}
+}
+
+// DeletedAtCleared returns if the "deletedAt" field was cleared in this mutation.
+func (m *PetMutation) DeletedAtCleared() bool {
+	_, ok := m.clearedFields[pet.FieldDeletedAt]
+	return ok
+}
+
+// ResetDeletedAt resets all changes to the "deletedAt" field.
+func (m *PetMutation) ResetDeletedAt() {
+	m.deletedAt = nil
+	delete(m.clearedFields, pet.FieldDeletedAt)
+}
+
+// SetCreatedBy sets the "createdBy" field.
+func (m *PetMutation) SetCreatedBy(s string) {
+	m.createdBy = &s
+}
+
+// CreatedBy returns the value of the "createdBy" field in the mutation.
+func (m *PetMutation) CreatedBy() (r string, exists bool) {
+	v := m.createdBy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedBy returns the old "createdBy" field's value of the Pet entity.
+// If the Pet object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PetMutation) OldCreatedBy(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedBy: %w", err)
+	}
+	return oldValue.CreatedBy, nil
+}
+
+// ClearCreatedBy clears the value of the "createdBy" field.
+func (m *PetMutation) ClearCreatedBy() {
+	m.createdBy = nil
+	m.clearedFields[pet.FieldCreatedBy] = struct{}{}
+}
+
+// CreatedByCleared returns if the "createdBy" field was cleared in this mutation.
+func (m *PetMutation) CreatedByCleared() bool {
+	_, ok := m.clearedFields[pet.FieldCreatedBy]
+	return ok
+}
+
+// ResetCreatedBy resets all changes to the "createdBy" field.
+func (m *PetMutation) ResetCreatedBy() {
+	m.createdBy = nil
+	delete(m.clearedFields, pet.FieldCreatedBy)
+}
+
+// SetUpdatedBy sets the "updatedBy" field.
+func (m *PetMutation) SetUpdatedBy(s string) {
+	m.updatedBy = &s
+}
+
+// UpdatedBy returns the value of the "updatedBy" field in the mutation.
+func (m *PetMutation) UpdatedBy() (r string, exists bool) {
+	v := m.updatedBy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedBy returns the old "updatedBy" field's value of the Pet entity.
+// If the Pet object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PetMutation) OldUpdatedBy(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUpdatedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUpdatedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedBy: %w", err)
+	}
+	return oldValue.UpdatedBy, nil
+}
+
+// ClearUpdatedBy clears the value of the "updatedBy" field.
+func (m *PetMutation) ClearUpdatedBy() {
+	m.updatedBy = nil
+	m.clearedFields[pet.FieldUpdatedBy] = struct{}{}
+}
+
+// UpdatedByCleared returns if the "updatedBy" field was cleared in this mutation.
+func (m *PetMutation) UpdatedByCleared() bool {
+	_, ok := m.clearedFields[pet.FieldUpdatedBy]
+	return ok
+}
+
+// ResetUpdatedBy resets all changes to the "updatedBy" field.
+func (m *PetMutation) ResetUpdatedBy() {
+	m.updatedBy = nil
+	delete(m.clearedFields, pet.FieldUpdatedBy)
+}
+
+// SetRemark sets the "remark" field.
+func (m *PetMutation) SetRemark(s string) {
+	m.remark = &s
+}
+
+// Remark returns the value of the "remark" field in the mutation.
+func (m *PetMutation) Remark() (r string, exists bool) {
+	v := m.remark
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRemark returns the old "remark" field's value of the Pet entity.
+// If the Pet object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PetMutation) OldRemark(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldRemark is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldRemark requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRemark: %w", err)
+	}
+	return oldValue.Remark, nil
+}
+
+// ClearRemark clears the value of the "remark" field.
+func (m *PetMutation) ClearRemark() {
+	m.remark = nil
+	m.clearedFields[pet.FieldRemark] = struct{}{}
+}
+
+// RemarkCleared returns if the "remark" field was cleared in this mutation.
+func (m *PetMutation) RemarkCleared() bool {
+	_, ok := m.clearedFields[pet.FieldRemark]
+	return ok
+}
+
+// ResetRemark resets all changes to the "remark" field.
+func (m *PetMutation) ResetRemark() {
+	m.remark = nil
+	delete(m.clearedFields, pet.FieldRemark)
 }
 
 // SetName sets the "name" field.
@@ -166,7 +447,25 @@ func (m *PetMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PetMutation) Fields() []string {
-	fields := make([]string, 0, 1)
+	fields := make([]string, 0, 7)
+	if m.createdAt != nil {
+		fields = append(fields, pet.FieldCreatedAt)
+	}
+	if m.updatedAt != nil {
+		fields = append(fields, pet.FieldUpdatedAt)
+	}
+	if m.deletedAt != nil {
+		fields = append(fields, pet.FieldDeletedAt)
+	}
+	if m.createdBy != nil {
+		fields = append(fields, pet.FieldCreatedBy)
+	}
+	if m.updatedBy != nil {
+		fields = append(fields, pet.FieldUpdatedBy)
+	}
+	if m.remark != nil {
+		fields = append(fields, pet.FieldRemark)
+	}
 	if m.name != nil {
 		fields = append(fields, pet.FieldName)
 	}
@@ -178,6 +477,18 @@ func (m *PetMutation) Fields() []string {
 // schema.
 func (m *PetMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case pet.FieldCreatedAt:
+		return m.CreatedAt()
+	case pet.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case pet.FieldDeletedAt:
+		return m.DeletedAt()
+	case pet.FieldCreatedBy:
+		return m.CreatedBy()
+	case pet.FieldUpdatedBy:
+		return m.UpdatedBy()
+	case pet.FieldRemark:
+		return m.Remark()
 	case pet.FieldName:
 		return m.Name()
 	}
@@ -189,6 +500,18 @@ func (m *PetMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *PetMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case pet.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case pet.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case pet.FieldDeletedAt:
+		return m.OldDeletedAt(ctx)
+	case pet.FieldCreatedBy:
+		return m.OldCreatedBy(ctx)
+	case pet.FieldUpdatedBy:
+		return m.OldUpdatedBy(ctx)
+	case pet.FieldRemark:
+		return m.OldRemark(ctx)
 	case pet.FieldName:
 		return m.OldName(ctx)
 	}
@@ -200,6 +523,48 @@ func (m *PetMutation) OldField(ctx context.Context, name string) (ent.Value, err
 // type.
 func (m *PetMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case pet.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case pet.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case pet.FieldDeletedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDeletedAt(v)
+		return nil
+	case pet.FieldCreatedBy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedBy(v)
+		return nil
+	case pet.FieldUpdatedBy:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedBy(v)
+		return nil
+	case pet.FieldRemark:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRemark(v)
+		return nil
 	case pet.FieldName:
 		v, ok := value.(string)
 		if !ok {
@@ -236,7 +601,20 @@ func (m *PetMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PetMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(pet.FieldDeletedAt) {
+		fields = append(fields, pet.FieldDeletedAt)
+	}
+	if m.FieldCleared(pet.FieldCreatedBy) {
+		fields = append(fields, pet.FieldCreatedBy)
+	}
+	if m.FieldCleared(pet.FieldUpdatedBy) {
+		fields = append(fields, pet.FieldUpdatedBy)
+	}
+	if m.FieldCleared(pet.FieldRemark) {
+		fields = append(fields, pet.FieldRemark)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -249,6 +627,20 @@ func (m *PetMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PetMutation) ClearField(name string) error {
+	switch name {
+	case pet.FieldDeletedAt:
+		m.ClearDeletedAt()
+		return nil
+	case pet.FieldCreatedBy:
+		m.ClearCreatedBy()
+		return nil
+	case pet.FieldUpdatedBy:
+		m.ClearUpdatedBy()
+		return nil
+	case pet.FieldRemark:
+		m.ClearRemark()
+		return nil
+	}
 	return fmt.Errorf("unknown Pet nullable field %s", name)
 }
 
@@ -256,6 +648,24 @@ func (m *PetMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *PetMutation) ResetField(name string) error {
 	switch name {
+	case pet.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case pet.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case pet.FieldDeletedAt:
+		m.ResetDeletedAt()
+		return nil
+	case pet.FieldCreatedBy:
+		m.ResetCreatedBy()
+		return nil
+	case pet.FieldUpdatedBy:
+		m.ResetUpdatedBy()
+		return nil
+	case pet.FieldRemark:
+		m.ResetRemark()
+		return nil
 	case pet.FieldName:
 		m.ResetName()
 		return nil

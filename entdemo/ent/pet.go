@@ -6,6 +6,7 @@ import (
 	"entdemo/ent/pet"
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 )
@@ -14,8 +15,28 @@ import (
 type Pet struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	// 编号
+	ID string `json:"id,omitempty"`
+	// CreatedAt holds the value of the "createdAt" field.
+	// 创建时间
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	// UpdatedAt holds the value of the "updatedAt" field.
+	// 更新时间
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+	// DeletedAt holds the value of the "deletedAt" field.
+	// 删除时间
+	DeletedAt *time.Time `json:"deletedAt,omitempty"`
+	// CreatedBy holds the value of the "createdBy" field.
+	// 创建者
+	CreatedBy string `json:"createdBy,omitempty"`
+	// UpdatedBy holds the value of the "updatedBy" field.
+	// 修改者
+	UpdatedBy string `json:"updatedBy,omitempty"`
+	// Remark holds the value of the "remark" field.
+	// 备注
+	Remark string `json:"remark,omitempty"`
 	// Name holds the value of the "name" field.
+	// 宠物名字
 	Name string `json:"name,omitempty"`
 }
 
@@ -24,10 +45,10 @@ func (*Pet) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case pet.FieldID:
-			values[i] = new(sql.NullInt64)
-		case pet.FieldName:
+		case pet.FieldID, pet.FieldCreatedBy, pet.FieldUpdatedBy, pet.FieldRemark, pet.FieldName:
 			values[i] = new(sql.NullString)
+		case pet.FieldCreatedAt, pet.FieldUpdatedAt, pet.FieldDeletedAt:
+			values[i] = new(sql.NullTime)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Pet", columns[i])
 		}
@@ -44,11 +65,48 @@ func (pe *Pet) assignValues(columns []string, values []interface{}) error {
 	for i := range columns {
 		switch columns[i] {
 		case pet.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value.Valid {
+				pe.ID = value.String
 			}
-			pe.ID = int(value.Int64)
+		case pet.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field createdAt", values[i])
+			} else if value.Valid {
+				pe.CreatedAt = value.Time
+			}
+		case pet.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updatedAt", values[i])
+			} else if value.Valid {
+				pe.UpdatedAt = value.Time
+			}
+		case pet.FieldDeletedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field deletedAt", values[i])
+			} else if value.Valid {
+				pe.DeletedAt = new(time.Time)
+				*pe.DeletedAt = value.Time
+			}
+		case pet.FieldCreatedBy:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field createdBy", values[i])
+			} else if value.Valid {
+				pe.CreatedBy = value.String
+			}
+		case pet.FieldUpdatedBy:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field updatedBy", values[i])
+			} else if value.Valid {
+				pe.UpdatedBy = value.String
+			}
+		case pet.FieldRemark:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field remark", values[i])
+			} else if value.Valid {
+				pe.Remark = value.String
+			}
 		case pet.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
@@ -83,6 +141,20 @@ func (pe *Pet) String() string {
 	var builder strings.Builder
 	builder.WriteString("Pet(")
 	builder.WriteString(fmt.Sprintf("id=%v", pe.ID))
+	builder.WriteString(", createdAt=")
+	builder.WriteString(pe.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", updatedAt=")
+	builder.WriteString(pe.UpdatedAt.Format(time.ANSIC))
+	if v := pe.DeletedAt; v != nil {
+		builder.WriteString(", deletedAt=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", createdBy=")
+	builder.WriteString(pe.CreatedBy)
+	builder.WriteString(", updatedBy=")
+	builder.WriteString(pe.UpdatedBy)
+	builder.WriteString(", remark=")
+	builder.WriteString(pe.Remark)
 	builder.WriteString(", name=")
 	builder.WriteString(pe.Name)
 	builder.WriteByte(')')

@@ -7,6 +7,7 @@ import (
 	"entdemo/ent/pet"
 	"entdemo/ent/predicate"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -23,6 +24,92 @@ type PetUpdate struct {
 // Where adds a new predicate for the PetUpdate builder.
 func (pu *PetUpdate) Where(ps ...predicate.Pet) *PetUpdate {
 	pu.mutation.predicates = append(pu.mutation.predicates, ps...)
+	return pu
+}
+
+// SetUpdatedAt sets the "updatedAt" field.
+func (pu *PetUpdate) SetUpdatedAt(t time.Time) *PetUpdate {
+	pu.mutation.SetUpdatedAt(t)
+	return pu
+}
+
+// SetDeletedAt sets the "deletedAt" field.
+func (pu *PetUpdate) SetDeletedAt(t time.Time) *PetUpdate {
+	pu.mutation.SetDeletedAt(t)
+	return pu
+}
+
+// SetNillableDeletedAt sets the "deletedAt" field if the given value is not nil.
+func (pu *PetUpdate) SetNillableDeletedAt(t *time.Time) *PetUpdate {
+	if t != nil {
+		pu.SetDeletedAt(*t)
+	}
+	return pu
+}
+
+// ClearDeletedAt clears the value of the "deletedAt" field.
+func (pu *PetUpdate) ClearDeletedAt() *PetUpdate {
+	pu.mutation.ClearDeletedAt()
+	return pu
+}
+
+// SetCreatedBy sets the "createdBy" field.
+func (pu *PetUpdate) SetCreatedBy(s string) *PetUpdate {
+	pu.mutation.SetCreatedBy(s)
+	return pu
+}
+
+// SetNillableCreatedBy sets the "createdBy" field if the given value is not nil.
+func (pu *PetUpdate) SetNillableCreatedBy(s *string) *PetUpdate {
+	if s != nil {
+		pu.SetCreatedBy(*s)
+	}
+	return pu
+}
+
+// ClearCreatedBy clears the value of the "createdBy" field.
+func (pu *PetUpdate) ClearCreatedBy() *PetUpdate {
+	pu.mutation.ClearCreatedBy()
+	return pu
+}
+
+// SetUpdatedBy sets the "updatedBy" field.
+func (pu *PetUpdate) SetUpdatedBy(s string) *PetUpdate {
+	pu.mutation.SetUpdatedBy(s)
+	return pu
+}
+
+// SetNillableUpdatedBy sets the "updatedBy" field if the given value is not nil.
+func (pu *PetUpdate) SetNillableUpdatedBy(s *string) *PetUpdate {
+	if s != nil {
+		pu.SetUpdatedBy(*s)
+	}
+	return pu
+}
+
+// ClearUpdatedBy clears the value of the "updatedBy" field.
+func (pu *PetUpdate) ClearUpdatedBy() *PetUpdate {
+	pu.mutation.ClearUpdatedBy()
+	return pu
+}
+
+// SetRemark sets the "remark" field.
+func (pu *PetUpdate) SetRemark(s string) *PetUpdate {
+	pu.mutation.SetRemark(s)
+	return pu
+}
+
+// SetNillableRemark sets the "remark" field if the given value is not nil.
+func (pu *PetUpdate) SetNillableRemark(s *string) *PetUpdate {
+	if s != nil {
+		pu.SetRemark(*s)
+	}
+	return pu
+}
+
+// ClearRemark clears the value of the "remark" field.
+func (pu *PetUpdate) ClearRemark() *PetUpdate {
+	pu.mutation.ClearRemark()
 	return pu
 }
 
@@ -43,6 +130,7 @@ func (pu *PetUpdate) Save(ctx context.Context) (int, error) {
 		err      error
 		affected int
 	)
+	pu.defaults()
 	if len(pu.hooks) == 0 {
 		affected, err = pu.sqlSave(ctx)
 	} else {
@@ -88,13 +176,21 @@ func (pu *PetUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (pu *PetUpdate) defaults() {
+	if _, ok := pu.mutation.UpdatedAt(); !ok {
+		v := pet.UpdateDefaultUpdatedAt()
+		pu.mutation.SetUpdatedAt(v)
+	}
+}
+
 func (pu *PetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   pet.Table,
 			Columns: pet.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeString,
 				Column: pet.FieldID,
 			},
 		},
@@ -105,6 +201,65 @@ func (pu *PetUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := pu.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: pet.FieldUpdatedAt,
+		})
+	}
+	if value, ok := pu.mutation.DeletedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: pet.FieldDeletedAt,
+		})
+	}
+	if pu.mutation.DeletedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: pet.FieldDeletedAt,
+		})
+	}
+	if value, ok := pu.mutation.CreatedBy(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: pet.FieldCreatedBy,
+		})
+	}
+	if pu.mutation.CreatedByCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: pet.FieldCreatedBy,
+		})
+	}
+	if value, ok := pu.mutation.UpdatedBy(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: pet.FieldUpdatedBy,
+		})
+	}
+	if pu.mutation.UpdatedByCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: pet.FieldUpdatedBy,
+		})
+	}
+	if value, ok := pu.mutation.Remark(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: pet.FieldRemark,
+		})
+	}
+	if pu.mutation.RemarkCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: pet.FieldRemark,
+		})
 	}
 	if value, ok := pu.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
@@ -132,6 +287,92 @@ type PetUpdateOne struct {
 	mutation *PetMutation
 }
 
+// SetUpdatedAt sets the "updatedAt" field.
+func (puo *PetUpdateOne) SetUpdatedAt(t time.Time) *PetUpdateOne {
+	puo.mutation.SetUpdatedAt(t)
+	return puo
+}
+
+// SetDeletedAt sets the "deletedAt" field.
+func (puo *PetUpdateOne) SetDeletedAt(t time.Time) *PetUpdateOne {
+	puo.mutation.SetDeletedAt(t)
+	return puo
+}
+
+// SetNillableDeletedAt sets the "deletedAt" field if the given value is not nil.
+func (puo *PetUpdateOne) SetNillableDeletedAt(t *time.Time) *PetUpdateOne {
+	if t != nil {
+		puo.SetDeletedAt(*t)
+	}
+	return puo
+}
+
+// ClearDeletedAt clears the value of the "deletedAt" field.
+func (puo *PetUpdateOne) ClearDeletedAt() *PetUpdateOne {
+	puo.mutation.ClearDeletedAt()
+	return puo
+}
+
+// SetCreatedBy sets the "createdBy" field.
+func (puo *PetUpdateOne) SetCreatedBy(s string) *PetUpdateOne {
+	puo.mutation.SetCreatedBy(s)
+	return puo
+}
+
+// SetNillableCreatedBy sets the "createdBy" field if the given value is not nil.
+func (puo *PetUpdateOne) SetNillableCreatedBy(s *string) *PetUpdateOne {
+	if s != nil {
+		puo.SetCreatedBy(*s)
+	}
+	return puo
+}
+
+// ClearCreatedBy clears the value of the "createdBy" field.
+func (puo *PetUpdateOne) ClearCreatedBy() *PetUpdateOne {
+	puo.mutation.ClearCreatedBy()
+	return puo
+}
+
+// SetUpdatedBy sets the "updatedBy" field.
+func (puo *PetUpdateOne) SetUpdatedBy(s string) *PetUpdateOne {
+	puo.mutation.SetUpdatedBy(s)
+	return puo
+}
+
+// SetNillableUpdatedBy sets the "updatedBy" field if the given value is not nil.
+func (puo *PetUpdateOne) SetNillableUpdatedBy(s *string) *PetUpdateOne {
+	if s != nil {
+		puo.SetUpdatedBy(*s)
+	}
+	return puo
+}
+
+// ClearUpdatedBy clears the value of the "updatedBy" field.
+func (puo *PetUpdateOne) ClearUpdatedBy() *PetUpdateOne {
+	puo.mutation.ClearUpdatedBy()
+	return puo
+}
+
+// SetRemark sets the "remark" field.
+func (puo *PetUpdateOne) SetRemark(s string) *PetUpdateOne {
+	puo.mutation.SetRemark(s)
+	return puo
+}
+
+// SetNillableRemark sets the "remark" field if the given value is not nil.
+func (puo *PetUpdateOne) SetNillableRemark(s *string) *PetUpdateOne {
+	if s != nil {
+		puo.SetRemark(*s)
+	}
+	return puo
+}
+
+// ClearRemark clears the value of the "remark" field.
+func (puo *PetUpdateOne) ClearRemark() *PetUpdateOne {
+	puo.mutation.ClearRemark()
+	return puo
+}
+
 // SetName sets the "name" field.
 func (puo *PetUpdateOne) SetName(s string) *PetUpdateOne {
 	puo.mutation.SetName(s)
@@ -156,6 +397,7 @@ func (puo *PetUpdateOne) Save(ctx context.Context) (*Pet, error) {
 		err  error
 		node *Pet
 	)
+	puo.defaults()
 	if len(puo.hooks) == 0 {
 		node, err = puo.sqlSave(ctx)
 	} else {
@@ -201,13 +443,21 @@ func (puo *PetUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (puo *PetUpdateOne) defaults() {
+	if _, ok := puo.mutation.UpdatedAt(); !ok {
+		v := pet.UpdateDefaultUpdatedAt()
+		puo.mutation.SetUpdatedAt(v)
+	}
+}
+
 func (puo *PetUpdateOne) sqlSave(ctx context.Context) (_node *Pet, err error) {
 	_spec := &sqlgraph.UpdateSpec{
 		Node: &sqlgraph.NodeSpec{
 			Table:   pet.Table,
 			Columns: pet.Columns,
 			ID: &sqlgraph.FieldSpec{
-				Type:   field.TypeInt,
+				Type:   field.TypeString,
 				Column: pet.FieldID,
 			},
 		},
@@ -235,6 +485,65 @@ func (puo *PetUpdateOne) sqlSave(ctx context.Context) (_node *Pet, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := puo.mutation.UpdatedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: pet.FieldUpdatedAt,
+		})
+	}
+	if value, ok := puo.mutation.DeletedAt(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Value:  value,
+			Column: pet.FieldDeletedAt,
+		})
+	}
+	if puo.mutation.DeletedAtCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeTime,
+			Column: pet.FieldDeletedAt,
+		})
+	}
+	if value, ok := puo.mutation.CreatedBy(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: pet.FieldCreatedBy,
+		})
+	}
+	if puo.mutation.CreatedByCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: pet.FieldCreatedBy,
+		})
+	}
+	if value, ok := puo.mutation.UpdatedBy(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: pet.FieldUpdatedBy,
+		})
+	}
+	if puo.mutation.UpdatedByCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: pet.FieldUpdatedBy,
+		})
+	}
+	if value, ok := puo.mutation.Remark(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: pet.FieldRemark,
+		})
+	}
+	if puo.mutation.RemarkCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: pet.FieldRemark,
+		})
 	}
 	if value, ok := puo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{

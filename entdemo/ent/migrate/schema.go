@@ -10,7 +10,13 @@ import (
 var (
 	// PetsColumns holds the columns for the "pets" table.
 	PetsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "id", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_by", Type: field.TypeString, Nullable: true},
+		{Name: "updated_by", Type: field.TypeString, Nullable: true},
+		{Name: "remark", Type: field.TypeString, Nullable: true},
 		{Name: "name", Type: field.TypeString},
 	}
 	// PetsTable holds the schema information for the "pets" table.

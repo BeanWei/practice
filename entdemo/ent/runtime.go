@@ -2,8 +2,33 @@
 
 package ent
 
+import (
+	"entdemo/ent/pet"
+	"entdemo/ent/schema"
+	"time"
+)
+
 // The init function reads all schema descriptors with runtime code
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	petMixin := schema.Pet{}.Mixin()
+	petMixinFields0 := petMixin[0].Fields()
+	_ = petMixinFields0
+	petFields := schema.Pet{}.Fields()
+	_ = petFields
+	// petDescCreatedAt is the schema descriptor for createdAt field.
+	petDescCreatedAt := petMixinFields0[1].Descriptor()
+	// pet.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	pet.DefaultCreatedAt = petDescCreatedAt.Default.(func() time.Time)
+	// petDescUpdatedAt is the schema descriptor for updatedAt field.
+	petDescUpdatedAt := petMixinFields0[2].Descriptor()
+	// pet.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
+	pet.DefaultUpdatedAt = petDescUpdatedAt.Default.(func() time.Time)
+	// pet.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
+	pet.UpdateDefaultUpdatedAt = petDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// petDescID is the schema descriptor for id field.
+	petDescID := petMixinFields0[0].Descriptor()
+	// pet.DefaultID holds the default value on creation for the id field.
+	pet.DefaultID = petDescID.Default.(func() string)
 }

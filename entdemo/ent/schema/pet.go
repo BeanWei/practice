@@ -13,6 +13,13 @@ type Pet struct {
 	ent.Schema
 }
 
+// Mixin of the Pet
+func (Pet) Mixin() []ent.Mixin {
+	return []ent.Mixin{
+		BaseMixin{},
+	}
+}
+
 // Annotations of the Pet
 func (Pet) Annotations() []schema.Annotation {
 	return []schema.Annotation{
@@ -57,6 +64,7 @@ func (Pet) Annotations() []schema.Annotation {
 func (Pet) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
+			Comment("宠物名字").
 			Annotations(
 				entrest.Field{
 					Validate:   "required#请输入宠物的名字",

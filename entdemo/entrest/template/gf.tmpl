@@ -65,7 +65,7 @@ type Update{{ $.Name }}Request struct {
                 {{- end }}
                 {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
             {{- end }}
-        {{- else }}
+        {{- else if not $f.Immutable }}
             {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
         {{- end }}
     {{- end }}
@@ -83,6 +83,8 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     {{- if not (isNil $apiAnnotation.Prefix) }}
         {{- $apiPrefix = $apiAnnotation.Prefix }}
     {{- end }}
+
+    {{- $idTypePascal := pascal $.ID.Type.String }}
 
     s.BindMiddleware(
         "GET:{{ $apiPrefix }}/{{ snake $.Name }}",
@@ -134,7 +136,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 })
             }
 
-            id := r.GetInt("id")
+            id := r.Get{{ $idTypePascal }}("id")
             res, err := client.{{ $.Name }}.
                 Get(r.Context(), id)
             if err != nil {
@@ -213,7 +215,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 })
             }
 
-            id := r.GetInt("id")
+            id := r.Get{{ $idTypePascal }}("id")
             res, err := client.{{ $.Name }}.
                 UpdateOneID(id).
                 {{- range $f := $.Fields }}
@@ -225,7 +227,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                                 Set{{ $f.StructField }}(req.{{ $f.StructField }}).
                             {{- end }}
                         {{- end }}
-                    {{- else }}
+                    {{- else if not $f.Immutable }}
                         {{- if $f.NillableValue }}
                             SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                         {{- else }}
@@ -262,7 +264,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 })
             }
 
-            id := r.GetInt("id")
+            id := r.Get{{ $idTypePascal }}("id")
             err := client.{{ $.Name }}.
                 DeleteOneID(id).
                 Exec(r.Context())

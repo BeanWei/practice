@@ -20,22 +20,24 @@ type ListPetRequest struct {
 
 // GetPetRequest .
 type GetPetRequest struct {
-	ID int `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 }
 
 // CreatePetRequest .
 type CreatePetRequest struct {
-	Name string `json:"name,omitempty" v:"required#请输入宠物的名字"`
+	Remark string `json:"remark,omitempty" v:"required#请输入备注"`
+	Name   string `json:"name,omitempty" v:"required#请输入宠物的名字"`
 }
 
 // UpdatePetRequest .
 type UpdatePetRequest struct {
-	Name string `json:"name,omitempty" v:"required#请输入宠物的名字"`
+	Remark string `json:"remark,omitempty" v:"required#请输入备注"`
+	Name   string `json:"name,omitempty" v:"required#请输入宠物的名字"`
 }
 
 // DeletePetRequest .
 type DeletePetRequest struct {
-	ID int `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 }
 
 func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
@@ -85,7 +87,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				})
 			}
 
-			id := r.GetInt("id")
+			id := r.GetString("id")
 			res, err := client.Pet.
 				Get(r.Context(), id)
 			if err != nil {
@@ -115,6 +117,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 
 			res, err := client.Pet.
 				Create().
+				SetRemark(req.Remark).
 				SetName(req.Name).
 				Save(r.Context())
 			if err != nil {
@@ -142,9 +145,10 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				})
 			}
 
-			id := r.GetInt("id")
+			id := r.GetString("id")
 			res, err := client.Pet.
 				UpdateOneID(id).
+				SetRemark(req.Remark).
 				SetName(req.Name).
 				Save(r.Context())
 			if err != nil {
@@ -172,7 +176,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				})
 			}
 
-			id := r.GetInt("id")
+			id := r.GetString("id")
 			err := client.Pet.
 				DeleteOneID(id).
 				Exec(r.Context())
