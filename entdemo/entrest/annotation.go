@@ -26,7 +26,7 @@ type API struct {
 	// 接口 uri 前缀
 	Prefix string
 	// 中间件
-	Middlewares []*MiddlewareConfig
+	Middlewares []MiddlewareConfig
 }
 
 // Name describes the annotation name.

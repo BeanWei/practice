@@ -5,6 +5,7 @@ import (
 
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -25,7 +26,7 @@ func (Pet) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entrest.API{
 			Prefix: "/api/v1",
-			Middlewares: []*entrest.MiddlewareConfig{
+			Middlewares: []entrest.MiddlewareConfig{
 				{
 					PkgPath: "entdemo/middleware",
 					Code:    "middleware.AllMiddleware",
@@ -78,5 +79,9 @@ func (Pet) Fields() []ent.Field {
 
 // Edges of the Pet.
 func (Pet) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("owner", User.Type).
+			Ref("pets").
+			Unique(),
+	}
 }
