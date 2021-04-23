@@ -1,4 +1,4 @@
 package ent
 
 //go:generate go run -mod=mod entgo.io/ent/cmd/ent generate ./schema
-//go:generate go run -mod=mod entdemo/entrest/cmd/entrest -path ./schema
+//go:generate go run -mod=mod entdemo/entrest/cmd/entrest -p ./schema -f gf

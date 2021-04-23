@@ -15,7 +15,12 @@ import (
 const PkgName = "debug"
 
 // Generate .
-func Generate(g *gen.Graph) error {
+func Generate(g *gen.Graph, tplName string) error {
+	tpl, ok := templates[tplName]
+	if !ok {
+		return fmt.Errorf("not supports web frameworks: %s", tplName)
+	}
+
 	var assets assets
 	for _, schema := range g.Schemas {
 		assets.dirs = append(assets.dirs, filepath.Join(g.Config.Target, PkgName))
@@ -24,7 +29,7 @@ func Generate(g *gen.Graph) error {
 		if err != nil {
 			return fmt.Errorf("get type %q: %w", "", err)
 		}
-		if err := ServiceTemplate.Execute(b, typ); err != nil {
+		if err := tpl.Execute(b, typ); err != nil {
 			return fmt.Errorf("execute template %q: %w", "", err)
 		}
 

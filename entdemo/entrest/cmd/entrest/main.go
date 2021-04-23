@@ -11,7 +11,8 @@ import (
 
 func main() {
 	var (
-		schemaPath = flag.String("path", "", "path to schema directory")
+		schemaPath = flag.String("p", "", "path to schema directory")
+		tplName    = flag.String("f", "", "web frameworks: supports gf")
 	)
 	flag.Parse()
 	if *schemaPath == "" {
@@ -21,7 +22,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("entrest: failed loading ent graph: %v", err)
 	}
-	if err := entrest.Generate(graph); err != nil {
+	if err := entrest.Generate(graph, *tplName); err != nil {
 		log.Fatalf("entrest: failed generating entrest-services: %s", err)
 	}
 }
