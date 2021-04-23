@@ -1,0 +1,37 @@
+# HTTP Server
+[server]
+    address = ":8199"
+    dumpRouterMap = true
+    logPath = "./log/server"
+    serverAgent = "antbiz"
+    serverRoot = "public"
+    sessionIdName = "x-api-sid"
+    sessionPath = "./tmp/gsession"
+
+# Logger.
+[logger]
+    level = "all"
+    path = "./log"
+    stdout = true
+
+# Template.
+[viewer]
+    defaultFile = "index.html"
+    delimiters = ["${", "}"]
+    path = "template"
+
+# Database.
+[database]
+    [database.logger]
+        level = "all"
+        path = "./log/sql"
+        stdout = true
+    [database.default]
+        debug = true
+        link = "root:1234567890@tcp(127.0.0.1:3306)/antadmin?parseTime=true"
+        type = "mysql"
+
+# Redis数据库配置
+[redis]
+    cache = "127.0.0.1:6379,1,123456?idleTimeout=600"
+    default = "127.0.0.1:6379,0"
