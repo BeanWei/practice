@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"entgo.io/ent/entc/gen"
 	"golang.org/x/tools/imports"
@@ -34,7 +35,7 @@ func Generate(g *gen.Graph, tplName string) error {
 		}
 
 		assets.files = append(assets.files, file{
-			path:    filepath.Join(g.Config.Target, PkgName, fmt.Sprintf("%s_service.go", strings.ToLower(schema.Name))),
+			path:    filepath.Join(g.Config.Target, PkgName, fmt.Sprintf("%s_service.go", snake(schema.Name))),
 			content: b.Bytes(),
 		})
 	}
@@ -85,4 +86,32 @@ func (a assets) format() error {
 		}
 	}
 	return nil
+}
+
+// snake converts the given struct or field name into a snake_case.
+//
+//	Username => username
+//	FullName => full_name
+//	HTTPCode => http_code
+//
+func snake(s string) string {
+	var (
+		j int
+		b strings.Builder
+	)
+	for i := 0; i < len(s); i++ {
+		r := rune(s[i])
+		// Put '_' if it is not a start or end of a word, current letter is uppercase,
+		// and previous is lowercase (cases like: "UserInfo"), or next letter is also
+		// a lowercase and previous letter is not "_".
+		if i > 0 && i < len(s)-1 && unicode.IsUpper(r) {
+			if unicode.IsLower(rune(s[i-1])) ||
+				j != i-1 && unicode.IsLower(rune(s[i+1])) && unicode.IsLetter(rune(s[i-1])) {
+				j = i
+				b.WriteString("_")
+			}
+		}
+		b.WriteRune(unicode.ToLower(r))
+	}
+	return b.String()
 }

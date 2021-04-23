@@ -6,6 +6,11 @@ import (
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
+
+    {{- $apiAnnotation := $.Annotations.EntRESTAPI }}
+    {{- range $m := $apiAnnotation.Middlewares }}
+        "{{ $m.PkgPath }}"
+    {{- end }}
 )
 
 // List{{ $.Name }}Request .
@@ -75,160 +80,199 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 	s := g.Server()
 
     {{- $apiPrefix := "/api" }}
-    {{- $apiAnnotation := $.Annotations.EntRESTAPI }}
     {{- if not (isNil $apiAnnotation.Prefix) }}
         {{- $apiPrefix = $apiAnnotation.Prefix }}
     {{- end }}
 
-    s.BindHandler("GET:{{ $apiPrefix }}/{{ snake $.Name }}", func(r *ghttp.Request) {
-		var req List{{ $.Name }}Request
-		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
-		}
+    s.BindMiddleware(
+        "GET:{{ $apiPrefix }}/{{ snake $.Name }}",
+        {{- range $m := $apiAnnotation.Middlewares }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "list")) (not (isNil $m.Code)) }}
+                {{ $m.Code }},
+            {{- end }}
+        {{- end }}
+        func(r *ghttp.Request) {
+            var req List{{ $.Name }}Request
+            if err := r.Parse(&req); err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorParameterBind,
+                    Error:     err,
+                })
+            }
 
-		res, err := client.{{ $.Name }}.
-			Query().
-			Limit(req.PageSize).
-			Offset((req.PageToken - 1) * req.PageSize).
-			All(r.Context())
-		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorList,
-				Error:     err,
-			})
-		}
-		respHandler(r, &entrest.Result{
-			Data:   res,
-			IsList: true,
-		})
-	})
+            res, err := client.{{ $.Name }}.
+                Query().
+                Limit(req.PageSize).
+                Offset((req.PageToken - 1) * req.PageSize).
+                All(r.Context())
+            if err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorList,
+                    Error:     err,
+                })
+            }
+            respHandler(r, &entrest.Result{
+                Data:   res,
+                IsList: true,
+            })
+        },
+    )
 
-    s.BindHandler("GET:{{ $apiPrefix }}/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
-		var req Get{{ $.Name }}Request
-		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
-		}
+    s.BindMiddleware(
+        "GET:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
+        {{- range $m := $apiAnnotation.Middlewares }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "get")) (not (isNil $m.Code)) }}
+                {{ $m.Code }},
+            {{- end }}
+        {{- end }}
+        func(r *ghttp.Request) {
+            var req Get{{ $.Name }}Request
+            if err := r.Parse(&req); err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorParameterBind,
+                    Error:     err,
+                })
+            }
 
-		id := r.GetInt("id")
-		res, err := client.{{ $.Name }}.
-			Get(r.Context(), id)
-		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorGet,
-				Error:     err,
-			})
-		}
-		respHandler(r, &entrest.Result{
-			Data: res,
-		})
-	})
+            id := r.GetInt("id")
+            res, err := client.{{ $.Name }}.
+                Get(r.Context(), id)
+            if err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorGet,
+                    Error:     err,
+                })
+            }
+            respHandler(r, &entrest.Result{
+                Data: res,
+            })
+        },
+    )
 
-	s.BindHandler("POST:{{ $apiPrefix }}/{{ snake $.Name }}", func(r *ghttp.Request) {
-		var req Create{{ $.Name }}Request
-		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
-		}
+	s.BindMiddleware(
+        "POST:{{ $apiPrefix }}/{{ snake $.Name }}",
+        {{- range $m := $apiAnnotation.Middlewares }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "create")) (not (isNil $m.Code)) }}
+                {{ $m.Code }},
+            {{- end }}
+        {{- end }}
+        func(r *ghttp.Request) {
+            var req Create{{ $.Name }}Request
+            if err := r.Parse(&req); err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorParameterBind,
+                    Error:     err,
+                })
+            }
 
-		res, err := client.{{ $.Name }}.
-			Create().
-            {{- range $f := $.Fields }}
-                {{- if $annotation := $f.Annotations.EntRESTField }}
-                    {{- if $annotation.Creatable }}
+            res, err := client.{{ $.Name }}.
+                Create().
+                {{- range $f := $.Fields }}
+                    {{- if $annotation := $f.Annotations.EntRESTField }}
+                        {{- if $annotation.Creatable }}
+                            {{- if $f.NillableValue }}
+                                SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
+                            {{- else }}
+                                Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                            {{- end }}
+                        {{- end }}
+                    {{- else }}
                         {{- if $f.NillableValue }}
                             SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                         {{- else }}
                             Set{{ $f.StructField }}(req.{{ $f.StructField }}).
                         {{- end }}
                     {{- end }}
-                {{- else }}
-                    {{- if $f.NillableValue }}
-                        SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
-                    {{- else }}
-                        Set{{ $f.StructField }}(req.{{ $f.StructField }}).
-                    {{- end }}
                 {{- end }}
+                Save(r.Context())
+            if err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorCreate,
+                    Error:     err,
+                })
+            }
+            respHandler(r, &entrest.Result{
+                Data: res,
+            })
+        },
+    )
+
+	s.BindMiddleware(
+        "PUT:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
+        {{- range $m := $apiAnnotation.Middlewares }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "update")) (not (isNil $m.Code)) }}
+                {{ $m.Code }},
             {{- end }}
-			Save(r.Context())
-		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorCreate,
-				Error:     err,
-			})
-		}
-		respHandler(r, &entrest.Result{
-			Data: res,
-		})
-	})
+        {{- end }}
+        func(r *ghttp.Request) {
+            var req Update{{ $.Name }}Request
+            if err := r.Parse(&req); err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorParameterBind,
+                    Error:     err,
+                })
+            }
 
-	s.BindHandler("PUT:{{ $apiPrefix }}/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
-		var req Update{{ $.Name }}Request
-		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
-		}
-
-		id := r.GetInt("id")
-		res, err := client.{{ $.Name }}.
-			UpdateOneID(id).
-			{{- range $f := $.Fields }}
-                {{- if $annotation := $f.Annotations.EntRESTField }}
-                    {{- if $annotation.Updatable }}
+            id := r.GetInt("id")
+            res, err := client.{{ $.Name }}.
+                UpdateOneID(id).
+                {{- range $f := $.Fields }}
+                    {{- if $annotation := $f.Annotations.EntRESTField }}
+                        {{- if $annotation.Updatable }}
+                            {{- if $f.NillableValue }}
+                                SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
+                            {{- else }}
+                                Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                            {{- end }}
+                        {{- end }}
+                    {{- else }}
                         {{- if $f.NillableValue }}
                             SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                         {{- else }}
                             Set{{ $f.StructField }}(req.{{ $f.StructField }}).
                         {{- end }}
                     {{- end }}
-                {{- else }}
-                    {{- if $f.NillableValue }}
-                        SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
-                    {{- else }}
-                        Set{{ $f.StructField }}(req.{{ $f.StructField }}).
-                    {{- end }}
                 {{- end }}
+                Save(r.Context())
+            if err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorUpdate,
+                    Error:     err,
+                })
+            }
+            respHandler(r, &entrest.Result{
+                Data: res,
+            })
+        },
+    )
+
+	s.BindMiddleware(
+        "DELETE:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
+        {{- range $m := $apiAnnotation.Middlewares }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "delete")) (not (isNil $m.Code)) }}
+                {{ $m.Code }},
             {{- end }}
-			Save(r.Context())
-		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorUpdate,
-				Error:     err,
-			})
-		}
-		respHandler(r, &entrest.Result{
-			Data: res,
-		})
-	})
+        {{- end }}
+        func(r *ghttp.Request) {
+            var req Delete{{ $.Name }}Request
+            if err := r.Parse(&req); err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorParameterBind,
+                    Error:     err,
+                })
+            }
 
-	s.BindHandler("DELETE:{{ $apiPrefix }}/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
-		var req Delete{{ $.Name }}Request
-		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
-		}
-
-		id := r.GetInt("id")
-		err := client.{{ $.Name }}.
-			DeleteOneID(id).
-			Exec(r.Context())
-		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorDelete,
-				Error:     err,
-			})
-		}
-		respHandler(r, &entrest.Result{})
-	})
+            id := r.GetInt("id")
+            err := client.{{ $.Name }}.
+                DeleteOneID(id).
+                Exec(r.Context())
+            if err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorDelete,
+                    Error:     err,
+                })
+            }
+            respHandler(r, &entrest.Result{})
+        },
+    )
 }

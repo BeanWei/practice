@@ -18,6 +18,37 @@ func (Pet) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entrest.API{
 			Prefix: "/api/v1",
+			Middlewares: []*entrest.MiddlewareConfig{
+				{
+					PkgPath: "entdemo/middleware",
+					Code:    "middleware.AllMiddleware",
+				},
+				{
+					PkgPath: "entdemo/middleware",
+					ReqType: entrest.ListRequest,
+					Code:    "middleware.ListMiddleware",
+				},
+				{
+					PkgPath: "entdemo/middleware",
+					ReqType: entrest.GetRequest,
+					Code:    "middleware.GetMiddleware",
+				},
+				{
+					PkgPath: "entdemo/middleware",
+					ReqType: entrest.CreateRequest,
+					Code:    "middleware.CreateMiddleware",
+				},
+				{
+					PkgPath: "entdemo/middleware",
+					ReqType: entrest.UpdateRequest,
+					Code:    "middleware.UpdateMiddleware",
+				},
+				{
+					PkgPath: "entdemo/middleware",
+					ReqType: entrest.DeleteRequest,
+					Code:    "middleware.DeleteMiddleware",
+				},
+			},
 		},
 	}
 }

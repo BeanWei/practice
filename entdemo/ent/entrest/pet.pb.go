@@ -31,8 +31,18 @@ type ListPetRequest struct {
 	Sort      string `json:"sort,omitempty"`
 }
 
+func Middleware(r *ghttp.Request) {
+	// 中间件处理逻辑
+	r.Middleware.Next()
+}
+
 func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
 	s := g.Server()
+
+	s.BindMiddleware(
+		"POST:/api/pet",
+		Middleware,
+	)
 
 	s.BindHandler("POST:/api/pet", func(r *ghttp.Request) {
 		var req CreatePetRequest

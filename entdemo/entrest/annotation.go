@@ -1,6 +1,8 @@
 package entrest
 
-import "entgo.io/ent/schema"
+import (
+	"entgo.io/ent/schema"
+)
 
 // Field 接口字段注解
 type Field struct {
@@ -21,7 +23,10 @@ func (Field) Name() string {
 
 // API 接口配置注解
 type API struct {
+	// 接口 uri 前缀
 	Prefix string
+	// 中间件
+	Middlewares []*MiddlewareConfig
 }
 
 // Name describes the annotation name.
