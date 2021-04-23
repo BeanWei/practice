@@ -16,7 +16,7 @@ type List{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if not $f.Sensitive }}
-            {{- if $annotation := $f.Annotations.EntREST }}
+            {{- if $annotation := $f.Annotations.EntRESTField }}
                 {{- if $annotation.Searchable }}
                     {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} `{{ $tag }}`
                 {{- end }}
@@ -36,9 +36,9 @@ type Get{{ $.Name }}Request struct {
 type Create{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
-        {{- if $annotation := $f.Annotations.EntREST }}
+        {{- if $annotation := $f.Annotations.EntRESTField }}
             {{- if $annotation.Creatable }}
-                {{- if $annotation.Validate}}
+                {{- if not (isNil $annotation.Validate) }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
                 {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
@@ -53,9 +53,9 @@ type Create{{ $.Name }}Request struct {
 type Update{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
-        {{- if $annotation := $f.Annotations.EntREST }}
+        {{- if $annotation := $f.Annotations.EntRESTField }}
             {{- if $annotation.Updatable }}
-                {{- if $annotation.Validate}}
+                {{- if not (isNil $annotation.Validate) }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
                 {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
@@ -74,7 +74,13 @@ type Delete{{ $.Name }}Request struct {
 func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
 	s := g.Server()
 
-    s.BindHandler("GET:/api/{{ snake $.Name }}", func(r *ghttp.Request) {
+    {{- $apiPrefix := "/api" }}
+    {{- $apiAnnotation := $.Annotations.EntRESTAPI }}
+    {{- if not (isNil $apiAnnotation.Prefix) }}
+        {{- $apiPrefix = $apiAnnotation.Prefix }}
+    {{- end }}
+
+    s.BindHandler("GET:{{ $apiPrefix }}/{{ snake $.Name }}", func(r *ghttp.Request) {
 		var req List{{ $.Name }}Request
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -100,7 +106,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 		})
 	})
 
-    s.BindHandler("GET:/api/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
+    s.BindHandler("GET:{{ $apiPrefix }}/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
 		var req Get{{ $.Name }}Request
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -123,7 +129,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 		})
 	})
 
-	s.BindHandler("POST:/api/{{ snake $.Name }}", func(r *ghttp.Request) {
+	s.BindHandler("POST:{{ $apiPrefix }}/{{ snake $.Name }}", func(r *ghttp.Request) {
 		var req Create{{ $.Name }}Request
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -135,7 +141,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 		res, err := client.{{ $.Name }}.
 			Create().
             {{- range $f := $.Fields }}
-                {{- if $annotation := $f.Annotations.EntREST }}
+                {{- if $annotation := $f.Annotations.EntRESTField }}
                     {{- if $annotation.Creatable }}
                         {{- if $f.NillableValue }}
                             SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
@@ -163,7 +169,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 		})
 	})
 
-	s.BindHandler("PUT:/api/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
+	s.BindHandler("PUT:{{ $apiPrefix }}/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
 		var req Update{{ $.Name }}Request
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -176,7 +182,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 		res, err := client.{{ $.Name }}.
 			UpdateOneID(id).
 			{{- range $f := $.Fields }}
-                {{- if $annotation := $f.Annotations.EntREST }}
+                {{- if $annotation := $f.Annotations.EntRESTField }}
                     {{- if $annotation.Updatable }}
                         {{- if $f.NillableValue }}
                             SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
@@ -204,7 +210,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 		})
 	})
 
-	s.BindHandler("DELETE:/api/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
+	s.BindHandler("DELETE:{{ $apiPrefix }}/{{ snake $.Name }}/{id}", func(r *ghttp.Request) {
 		var req Delete{{ $.Name }}Request
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{

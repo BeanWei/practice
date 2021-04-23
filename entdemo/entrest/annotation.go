@@ -2,9 +2,8 @@ package entrest
 
 import "entgo.io/ent/schema"
 
-// Annotation is a builtin schema annotation for attaching
-// RESTful metadata to schema objects for both codegen and runtime.
-type Annotation struct {
+// Field 接口字段注解
+type Field struct {
 	// 表单验证规则: 遵循 gf 的验证规则
 	Validate string
 	// 可新建
@@ -16,10 +15,21 @@ type Annotation struct {
 }
 
 // Name describes the annotation name.
-func (Annotation) Name() string {
-	return "EntREST"
+func (Field) Name() string {
+	return "EntRESTField"
+}
+
+// API 接口配置注解
+type API struct {
+	Prefix string
+}
+
+// Name describes the annotation name.
+func (API) Name() string {
+	return "EntRESTAPI"
 }
 
 var (
-	_ schema.Annotation = (*Annotation)(nil)
+	_ schema.Annotation = (*Field)(nil)
+	_ schema.Annotation = (*API)(nil)
 )

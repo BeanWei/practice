@@ -39,7 +39,7 @@ type DeletePetRequest struct {
 func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
 	s := g.Server()
 
-	s.BindHandler("GET:/api/pet", func(r *ghttp.Request) {
+	s.BindHandler("GET:/api/v1/pet", func(r *ghttp.Request) {
 		var req ListPetRequest
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -65,7 +65,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 		})
 	})
 
-	s.BindHandler("GET:/api/pet/{id}", func(r *ghttp.Request) {
+	s.BindHandler("GET:/api/v1/pet/{id}", func(r *ghttp.Request) {
 		var req GetPetRequest
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -88,7 +88,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 		})
 	})
 
-	s.BindHandler("POST:/api/pet", func(r *ghttp.Request) {
+	s.BindHandler("POST:/api/v1/pet", func(r *ghttp.Request) {
 		var req CreatePetRequest
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -112,7 +112,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 		})
 	})
 
-	s.BindHandler("PUT:/api/pet/{id}", func(r *ghttp.Request) {
+	s.BindHandler("PUT:/api/v1/pet/{id}", func(r *ghttp.Request) {
 		var req UpdatePetRequest
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
@@ -137,7 +137,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 		})
 	})
 
-	s.BindHandler("DELETE:/api/pet/{id}", func(r *ghttp.Request) {
+	s.BindHandler("DELETE:/api/v1/pet/{id}", func(r *ghttp.Request) {
 		var req DeletePetRequest
 		if err := r.Parse(&req); err != nil {
 			respHandler(r, &entrest.Result{
