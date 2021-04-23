@@ -77,7 +77,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			})
 		}
 
-		id := r.GetInt("id")
+		id := r.GetString("id")
 		res, err := client.Pet.
 			UpdateOneID(id).
 			SetName(req.Name).
@@ -102,7 +102,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			})
 		}
 
-		id := r.GetInt("id")
+		id := r.GetString("id")
 		err := client.Pet.
 			DeleteOneID(id).
 			Exec(r.Context())
@@ -124,7 +124,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			})
 		}
 
-		id := r.GetInt("id")
+		id := r.GetString("id")
 		res, err := client.Pet.
 			Get(r.Context(), id)
 		if err != nil {

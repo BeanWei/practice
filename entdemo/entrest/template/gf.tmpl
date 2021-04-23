@@ -43,7 +43,7 @@ type Create{{ $.Name }}Request struct {
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if $annotation := $f.Annotations.EntRESTField }}
             {{- if $annotation.Creatable }}
-                {{- if not (isNil $annotation.Validate) }}
+                {{- if $annotation.Validate }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
                 {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
@@ -60,7 +60,7 @@ type Update{{ $.Name }}Request struct {
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if $annotation := $f.Annotations.EntRESTField }}
             {{- if $annotation.Updatable }}
-                {{- if not (isNil $annotation.Validate) }}
+                {{- if $annotation.Validate }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
                 {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
@@ -80,7 +80,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 	s := g.Server()
 
     {{- $apiPrefix := "/api" }}
-    {{- if not (isNil $apiAnnotation.Prefix) }}
+    {{- if $apiAnnotation.Prefix }}
         {{- $apiPrefix = $apiAnnotation.Prefix }}
     {{- end }}
 
@@ -89,7 +89,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     s.BindMiddleware(
         "GET:{{ $apiPrefix }}/{{ snake $.Name }}",
         {{- range $m := $apiAnnotation.Middlewares }}
-            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "list")) (not (isNil $m.Code)) }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "list")) (ne $m.Code "") }}
                 {{ $m.Code }},
             {{- end }}
         {{- end }}
@@ -123,7 +123,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     s.BindMiddleware(
         "GET:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
         {{- range $m := $apiAnnotation.Middlewares }}
-            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "get")) (not (isNil $m.Code)) }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "get")) (ne $m.Code "") }}
                 {{ $m.Code }},
             {{- end }}
         {{- end }}
@@ -154,7 +154,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 	s.BindMiddleware(
         "POST:{{ $apiPrefix }}/{{ snake $.Name }}",
         {{- range $m := $apiAnnotation.Middlewares }}
-            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "create")) (not (isNil $m.Code)) }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "create")) (ne $m.Code "") }}
                 {{ $m.Code }},
             {{- end }}
         {{- end }}
@@ -202,7 +202,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 	s.BindMiddleware(
         "PUT:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
         {{- range $m := $apiAnnotation.Middlewares }}
-            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "update")) (not (isNil $m.Code)) }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "update")) (ne $m.Code "") }}
                 {{ $m.Code }},
             {{- end }}
         {{- end }}
@@ -251,7 +251,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 	s.BindMiddleware(
         "DELETE:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
         {{- range $m := $apiAnnotation.Middlewares }}
-            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "delete")) (not (isNil $m.Code)) }}
+            {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "delete")) (ne $m.Code "") }}
                 {{ $m.Code }},
             {{- end }}
         {{- end }}

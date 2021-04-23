@@ -5,6 +5,7 @@ package ent
 import (
 	"entdemo/ent/pet"
 	"entdemo/ent/schema"
+	"entdemo/ent/user"
 	"time"
 )
 
@@ -31,4 +32,23 @@ func init() {
 	petDescID := petMixinFields0[0].Descriptor()
 	// pet.DefaultID holds the default value on creation for the id field.
 	pet.DefaultID = petDescID.Default.(func() string)
+	userMixin := schema.User{}.Mixin()
+	userMixinFields0 := userMixin[0].Fields()
+	_ = userMixinFields0
+	userFields := schema.User{}.Fields()
+	_ = userFields
+	// userDescCreatedAt is the schema descriptor for createdAt field.
+	userDescCreatedAt := userMixinFields0[1].Descriptor()
+	// user.DefaultCreatedAt holds the default value on creation for the createdAt field.
+	user.DefaultCreatedAt = userDescCreatedAt.Default.(func() time.Time)
+	// userDescUpdatedAt is the schema descriptor for updatedAt field.
+	userDescUpdatedAt := userMixinFields0[2].Descriptor()
+	// user.DefaultUpdatedAt holds the default value on creation for the updatedAt field.
+	user.DefaultUpdatedAt = userDescUpdatedAt.Default.(func() time.Time)
+	// user.UpdateDefaultUpdatedAt holds the default value on update for the updatedAt field.
+	user.UpdateDefaultUpdatedAt = userDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userDescID is the schema descriptor for id field.
+	userDescID := userMixinFields0[0].Descriptor()
+	// user.DefaultID holds the default value on creation for the id field.
+	user.DefaultID = userDescID.Default.(func() string)
 }
