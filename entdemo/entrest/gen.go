@@ -27,19 +27,15 @@ func Generate(g *gen.Graph, tplName string) error {
 	}
 
 	var assets assets
-	for _, schema := range g.Schemas {
+	for _, n := range g.Nodes {
 		assets.dirs = append(assets.dirs, filepath.Join(g.Config.Target, PkgName))
 		b := bytes.NewBuffer(nil)
-		typ, err := gen.NewType(g.Config, schema)
-		if err != nil {
-			return fmt.Errorf("get type %q: %w", "", err)
-		}
-		if err := tpl.Execute(b, typ); err != nil {
+		if err := tpl.Execute(b, n); err != nil {
 			return fmt.Errorf("execute template %q: %w", "", err)
 		}
 
 		assets.files = append(assets.files, file{
-			path:    filepath.Join(g.Config.Target, PkgName, fmt.Sprintf("%s_service.go", snake(schema.Name))),
+			path:    filepath.Join(g.Config.Target, PkgName, fmt.Sprintf("%s_service.go", snake(n.Name))),
 			content: b.Bytes(),
 		})
 	}
