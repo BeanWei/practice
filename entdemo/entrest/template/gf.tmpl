@@ -156,7 +156,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     {{- end }}
 
     s.BindMiddleware(
-        "GET:{{ $apiPrefix }}/{{ snake $.Name }}",
+        "GET:{{ $apiPrefix }}/{{ $lowerName }}",
         {{- range $m := $apiAnnotation.Middlewares }}
             {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "list")) (ne $m.Code "") }}
                 {{ $m.Code }},
@@ -198,7 +198,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     )
 
     s.BindMiddleware(
-        "GET:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
+        "GET:{{ $apiPrefix }}/{{ $lowerName }}/{id}",
         {{- range $m := $apiAnnotation.Middlewares }}
             {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "get")) (ne $m.Code "") }}
                 {{ $m.Code }},
@@ -240,7 +240,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     )
 
 	s.BindMiddleware(
-        "POST:{{ $apiPrefix }}/{{ snake $.Name }}",
+        "POST:{{ $apiPrefix }}/{{ $lowerName }}",
         {{- range $m := $apiAnnotation.Middlewares }}
             {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "create")) (ne $m.Code "") }}
                 {{ $m.Code }},
@@ -299,7 +299,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     )
 
 	s.BindMiddleware(
-        "PUT:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
+        "PUT:{{ $apiPrefix }}/{{ $lowerName }}/{id}",
         {{- range $m := $apiAnnotation.Middlewares }}
             {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "update")) (ne $m.Code "") }}
                 {{ $m.Code }},
@@ -358,7 +358,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
     )
 
 	s.BindMiddleware(
-        "DELETE:{{ $apiPrefix }}/{{ snake $.Name }}/{id}",
+        "DELETE:{{ $apiPrefix }}/{{ $lowerName }}/{id}",
         {{- range $m := $apiAnnotation.Middlewares }}
             {{- if and (or (eq $m.ReqType "") (eq $m.ReqType "delete")) (ne $m.Code "") }}
                 {{ $m.Code }},
