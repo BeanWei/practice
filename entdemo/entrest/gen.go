@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"entgo.io/ent/entc/gen"
 	"golang.org/x/tools/imports"
@@ -13,11 +14,11 @@ import (
 
 const PkgName = "debug"
 
-var (
-	snake = gen.Funcs["snake"].(func(string) string)
-	// pascal = gen.Funcs["pascal"].(func(string) string)
-	// camel  = gen.Funcs["camel"].(func(string) string)
-)
+// var (
+// 	snake = gen.Funcs["snake"].(func(string) string)
+// 	pascal = gen.Funcs["pascal"].(func(string) string)
+// 	camel  = gen.Funcs["camel"].(func(string) string)
+// )
 
 // Generate .
 func Generate(g *gen.Graph, tplName string) error {
@@ -42,7 +43,7 @@ func Generate(g *gen.Graph, tplName string) error {
 		}
 
 		assets.files = append(assets.files, file{
-			path:    filepath.Join(g.Config.Target, PkgName, fmt.Sprintf("%s_service.go", snake(n.Name))),
+			path:    filepath.Join(g.Config.Target, PkgName, fmt.Sprintf("%s_service.go", strings.ToLower(n.Name))),
 			content: b.Bytes(),
 		})
 	}

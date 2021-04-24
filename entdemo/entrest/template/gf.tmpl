@@ -1,8 +1,13 @@
 package entrest
 
+{{ $camelName := camel $.Name }}
+{{ $lowerName := lower $.Name }}
+
 import (
 	"entdemo/entrest"
-    "{{ trimRightStr $.Schema "/schema" }}"
+    {{ $entPkg := trimRightStr $.Schema "/schema" }}
+    "{{ $entPkg }}"
+    "{{ $entPkg }}/{{ $lowerName }}"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
@@ -115,22 +120,38 @@ type Delete{{ $.Name }}Request struct {
     ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
 }
 
-func ent{{ $.Name }}2rest{{ $.Name }}(e *ent.{{ $.Name }}) *{{ $.Name }} {
+func ent{{ $.Name }}2rest{{ $.Name }}({{ $camelName }} *ent.{{ $.Name }}) *{{ $.Name }} {
 	return &{{ $.Name }}{
-        ID: e.ID,
+        ID: {{ $camelName }}.ID,
 		{{- range $f := $.Fields }}
-            {{ $f.StructField }}: e.{{ $f.StructField }},
+            {{ $f.StructField }}: {{ $camelName }}.{{ $f.StructField }},
         {{- end }}
 	}
 }
 
-func rest{{ $.Name }}2ent{{ $.Name }}(r *{{ $.Name }}) *ent.{{ $.Name }} {
+func ent{{ $.Name }}s2rest{{ $.Name }}s({{ $camelName }}s []*ent.{{ $.Name }}) []*{{ $.Name }} {
+	rest{{ $.Name }}s := make([]*{{ $.Name }}, len({{ $camelName }}s))
+	for _, {{ $camelName }} := range {{ $camelName }}s {
+		rest{{ $.Name }}s = append(rest{{ $.Name }}s, ent{{ $.Name }}2rest{{ $.Name }}({{ $camelName }}))
+	}
+	return rest{{ $.Name }}s
+}
+
+func rest{{ $.Name }}2ent{{ $.Name }}({{ $camelName }} *{{ $.Name }}) *ent.{{ $.Name }} {
 	return &ent.{{ $.Name }}{
-		ID: r.ID,
+		ID: {{ $camelName }}.ID,
 		{{- range $f := $.Fields }}
-            {{ $f.StructField }}: r.{{ $f.StructField }},
+            {{ $f.StructField }}: {{ $camelName }}.{{ $f.StructField }},
         {{- end }}
 	}
+}
+
+func rest{{ $.Name }}s2ent{{ $.Name }}s({{ $camelName }}s []*{{ $.Name }}) []*ent.{{ $.Name }} {
+	rest{{ $.Name }}s := make([]*ent.{{ $.Name }}, len({{ $camelName }}s))
+	for _, {{ $camelName }} := range {{ $camelName }}s {
+		rest{{ $.Name }}s = append(rest{{ $.Name }}s, rest{{ $.Name }}2ent{{ $.Name }}({{ $camelName }}))
+	}
+	return rest{{ $.Name }}s
 }
 
 func rest{{ $.Name }}IDs(items []*{{ $.Name }}) []string {
@@ -167,8 +188,14 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 })
             }
 
-            res, err := client.{{ $.Name }}.
+            {{ $camelName }}s, err := client.{{ $.Name }}.
                 Query().
+                {{- range $e := $.Edges }}
+                    {{- $annotation := $e.Annotations.EntRESTField }}
+                    {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
+                        With{{ pascal $e.Name }}().
+                    {{- end }}
+                {{- end }}
                 Limit(req.PageSize).
                 Offset((req.PageToken - 1) * req.PageSize).
                 All(r.Context())
@@ -178,6 +205,8 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                     Error:     err,
                 })
             }
+
+            res := ent{{ $.Name }}s2rest{{ $.Name }}s({{ $camelName }}s)
             respHandler(r, &entrest.Result{
                 Data:   res,
                 IsList: true,
@@ -202,14 +231,26 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
             }
 
             id := r.Get{{ $idTypePascal }}("id")
-            res, err := client.{{ $.Name }}.
-                Get(r.Context(), id)
+            {{ $camelName }}, err := client.{{ $.Name }}.
+                Query().
+				Where(
+					{{ $lowerName }}.IDEQ(id),
+				).
+				{{- range $e := $.Edges }}
+                    {{- $annotation := $e.Annotations.EntRESTField }}
+                    {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
+                        With{{ pascal $e.Name }}().
+                    {{- end }}
+                {{- end }}
+				First(r.Context())
             if err != nil {
                 respHandler(r, &entrest.Result{
                     ErrorType: entrest.ErrorGet,
                     Error:     err,
                 })
             }
+
+            res := ent{{ $.Name }}2rest{{ $.Name }}({{ $camelName }})
             respHandler(r, &entrest.Result{
                 Data: res,
             })

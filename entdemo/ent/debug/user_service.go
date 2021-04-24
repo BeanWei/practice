@@ -1,9 +1,11 @@
 package entrest
 
 import (
-	"entdemo/ent"
 	"entdemo/entrest"
 	"time"
+
+	"entdemo/ent"
+	"entdemo/ent/user"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
@@ -57,32 +59,48 @@ type DeleteUserRequest struct {
 	ID string `json:"id,omitempty"`
 }
 
-func entUser2restUser(e *ent.User) *User {
+func entUser2restUser(user *ent.User) *User {
 	return &User{
-		ID:        e.ID,
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-		DeletedAt: e.DeletedAt,
-		CreatedBy: e.CreatedBy,
-		UpdatedBy: e.UpdatedBy,
-		Remark:    e.Remark,
-		Name:      e.Name,
-		Phone:     e.Phone,
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		DeletedAt: user.DeletedAt,
+		CreatedBy: user.CreatedBy,
+		UpdatedBy: user.UpdatedBy,
+		Remark:    user.Remark,
+		Name:      user.Name,
+		Phone:     user.Phone,
 	}
 }
 
-func restUser2entUser(r *User) *ent.User {
-	return &ent.User{
-		ID:        r.ID,
-		CreatedAt: r.CreatedAt,
-		UpdatedAt: r.UpdatedAt,
-		DeletedAt: r.DeletedAt,
-		CreatedBy: r.CreatedBy,
-		UpdatedBy: r.UpdatedBy,
-		Remark:    r.Remark,
-		Name:      r.Name,
-		Phone:     r.Phone,
+func entUsers2restUsers(users []*ent.User) []*User {
+	restUsers := make([]*User, len(users))
+	for _, user := range users {
+		restUsers = append(restUsers, entUser2restUser(user))
 	}
+	return restUsers
+}
+
+func restUser2entUser(user *User) *ent.User {
+	return &ent.User{
+		ID:        user.ID,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		DeletedAt: user.DeletedAt,
+		CreatedBy: user.CreatedBy,
+		UpdatedBy: user.UpdatedBy,
+		Remark:    user.Remark,
+		Name:      user.Name,
+		Phone:     user.Phone,
+	}
+}
+
+func restUsers2entUsers(users []*User) []*ent.User {
+	restUsers := make([]*ent.User, len(users))
+	for _, user := range users {
+		restUsers = append(restUsers, restUser2entUser(user))
+	}
+	return restUsers
 }
 
 func restUserIDs(items []*User) []string {
@@ -107,8 +125,9 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				})
 			}
 
-			res, err := client.User.
+			users, err := client.User.
 				Query().
+				WithPets().
 				Limit(req.PageSize).
 				Offset((req.PageToken - 1) * req.PageSize).
 				All(r.Context())
@@ -118,6 +137,8 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 					Error:     err,
 				})
 			}
+
+			res := entUsers2restUsers(users)
 			respHandler(r, &entrest.Result{
 				Data:   res,
 				IsList: true,
@@ -137,14 +158,21 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 			}
 
 			id := r.GetString("id")
-			res, err := client.User.
-				Get(r.Context(), id)
+			user, err := client.User.
+				Query().
+				Where(
+					user.IDEQ(id),
+				).
+				WithPets().
+				First(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{
 					ErrorType: entrest.ErrorGet,
 					Error:     err,
 				})
 			}
+
+			res := entUser2restUser(user)
 			respHandler(r, &entrest.Result{
 				Data: res,
 			})

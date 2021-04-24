@@ -1,9 +1,11 @@
 package entrest
 
 import (
-	"entdemo/ent"
 	"entdemo/entrest"
 	"time"
+
+	"entdemo/ent"
+	"entdemo/ent/pet"
 
 	"entdemo/middleware"
 
@@ -56,30 +58,46 @@ type DeletePetRequest struct {
 	ID string `json:"id,omitempty"`
 }
 
-func entPet2restPet(e *ent.Pet) *Pet {
+func entPet2restPet(pet *ent.Pet) *Pet {
 	return &Pet{
-		ID:        e.ID,
-		CreatedAt: e.CreatedAt,
-		UpdatedAt: e.UpdatedAt,
-		DeletedAt: e.DeletedAt,
-		CreatedBy: e.CreatedBy,
-		UpdatedBy: e.UpdatedBy,
-		Remark:    e.Remark,
-		Name:      e.Name,
+		ID:        pet.ID,
+		CreatedAt: pet.CreatedAt,
+		UpdatedAt: pet.UpdatedAt,
+		DeletedAt: pet.DeletedAt,
+		CreatedBy: pet.CreatedBy,
+		UpdatedBy: pet.UpdatedBy,
+		Remark:    pet.Remark,
+		Name:      pet.Name,
 	}
 }
 
-func restPet2entPet(r *Pet) *ent.Pet {
-	return &ent.Pet{
-		ID:        r.ID,
-		CreatedAt: r.CreatedAt,
-		UpdatedAt: r.UpdatedAt,
-		DeletedAt: r.DeletedAt,
-		CreatedBy: r.CreatedBy,
-		UpdatedBy: r.UpdatedBy,
-		Remark:    r.Remark,
-		Name:      r.Name,
+func entPets2restPets(pets []*ent.Pet) []*Pet {
+	restPets := make([]*Pet, len(pets))
+	for _, pet := range pets {
+		restPets = append(restPets, entPet2restPet(pet))
 	}
+	return restPets
+}
+
+func restPet2entPet(pet *Pet) *ent.Pet {
+	return &ent.Pet{
+		ID:        pet.ID,
+		CreatedAt: pet.CreatedAt,
+		UpdatedAt: pet.UpdatedAt,
+		DeletedAt: pet.DeletedAt,
+		CreatedBy: pet.CreatedBy,
+		UpdatedBy: pet.UpdatedBy,
+		Remark:    pet.Remark,
+		Name:      pet.Name,
+	}
+}
+
+func restPets2entPets(pets []*Pet) []*ent.Pet {
+	restPets := make([]*ent.Pet, len(pets))
+	for _, pet := range pets {
+		restPets = append(restPets, restPet2entPet(pet))
+	}
+	return restPets
 }
 
 func restPetIDs(items []*Pet) []string {
@@ -106,8 +124,9 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				})
 			}
 
-			res, err := client.Pet.
+			pets, err := client.Pet.
 				Query().
+				WithOwner().
 				Limit(req.PageSize).
 				Offset((req.PageToken - 1) * req.PageSize).
 				All(r.Context())
@@ -117,6 +136,8 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 					Error:     err,
 				})
 			}
+
+			res := entPets2restPets(pets)
 			respHandler(r, &entrest.Result{
 				Data:   res,
 				IsList: true,
@@ -138,14 +159,21 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			}
 
 			id := r.GetString("id")
-			res, err := client.Pet.
-				Get(r.Context(), id)
+			pet, err := client.Pet.
+				Query().
+				Where(
+					pet.IDEQ(id),
+				).
+				WithOwner().
+				First(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{
 					ErrorType: entrest.ErrorGet,
 					Error:     err,
 				})
 			}
+
+			res := entPet2restPet(pet)
 			respHandler(r, &entrest.Result{
 				Data: res,
 			})
