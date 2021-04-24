@@ -68,6 +68,7 @@ func entPet2restPet(pet *ent.Pet) *Pet {
 		UpdatedBy: pet.UpdatedBy,
 		Remark:    pet.Remark,
 		Name:      pet.Name,
+		Owner:     pet.Edges.Owner,
 	}
 }
 
@@ -75,27 +76,6 @@ func entPets2restPets(pets []*ent.Pet) []*Pet {
 	restPets := make([]*Pet, len(pets))
 	for _, pet := range pets {
 		restPets = append(restPets, entPet2restPet(pet))
-	}
-	return restPets
-}
-
-func restPet2entPet(pet *Pet) *ent.Pet {
-	return &ent.Pet{
-		ID:        pet.ID,
-		CreatedAt: pet.CreatedAt,
-		UpdatedAt: pet.UpdatedAt,
-		DeletedAt: pet.DeletedAt,
-		CreatedBy: pet.CreatedBy,
-		UpdatedBy: pet.UpdatedBy,
-		Remark:    pet.Remark,
-		Name:      pet.Name,
-	}
-}
-
-func restPets2entPets(pets []*Pet) []*ent.Pet {
-	restPets := make([]*ent.Pet, len(pets))
-	for _, pet := range pets {
-		restPets = append(restPets, restPet2entPet(pet))
 	}
 	return restPets
 }

@@ -70,6 +70,7 @@ func entUser2restUser(user *ent.User) *User {
 		Remark:    user.Remark,
 		Name:      user.Name,
 		Phone:     user.Phone,
+		Pets:      user.Edges.Pets,
 	}
 }
 
@@ -77,28 +78,6 @@ func entUsers2restUsers(users []*ent.User) []*User {
 	restUsers := make([]*User, len(users))
 	for _, user := range users {
 		restUsers = append(restUsers, entUser2restUser(user))
-	}
-	return restUsers
-}
-
-func restUser2entUser(user *User) *ent.User {
-	return &ent.User{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		DeletedAt: user.DeletedAt,
-		CreatedBy: user.CreatedBy,
-		UpdatedBy: user.UpdatedBy,
-		Remark:    user.Remark,
-		Name:      user.Name,
-		Phone:     user.Phone,
-	}
-}
-
-func restUsers2entUsers(users []*User) []*ent.User {
-	restUsers := make([]*ent.User, len(users))
-	for _, user := range users {
-		restUsers = append(restUsers, restUser2entUser(user))
 	}
 	return restUsers
 }

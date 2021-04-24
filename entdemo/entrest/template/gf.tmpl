@@ -126,6 +126,13 @@ func ent{{ $.Name }}2rest{{ $.Name }}({{ $camelName }} *ent.{{ $.Name }}) *{{ $.
 		{{- range $f := $.Fields }}
             {{ $f.StructField }}: {{ $camelName }}.{{ $f.StructField }},
         {{- end }}
+        {{- range $e := $.Edges }}
+            {{- $annotation := $e.Annotations.EntRESTField }}
+            {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
+                {{- $pascalEName := pascal $e.Name }}
+                {{ $pascalEName }}: {{ $camelName }}.Edges.{{ $pascalEName }},
+            {{- end }}
+        {{- end }}
 	}
 }
 
@@ -133,23 +140,6 @@ func ent{{ $.Name }}s2rest{{ $.Name }}s({{ $camelName }}s []*ent.{{ $.Name }}) [
 	rest{{ $.Name }}s := make([]*{{ $.Name }}, len({{ $camelName }}s))
 	for _, {{ $camelName }} := range {{ $camelName }}s {
 		rest{{ $.Name }}s = append(rest{{ $.Name }}s, ent{{ $.Name }}2rest{{ $.Name }}({{ $camelName }}))
-	}
-	return rest{{ $.Name }}s
-}
-
-func rest{{ $.Name }}2ent{{ $.Name }}({{ $camelName }} *{{ $.Name }}) *ent.{{ $.Name }} {
-	return &ent.{{ $.Name }}{
-		ID: {{ $camelName }}.ID,
-		{{- range $f := $.Fields }}
-            {{ $f.StructField }}: {{ $camelName }}.{{ $f.StructField }},
-        {{- end }}
-	}
-}
-
-func rest{{ $.Name }}s2ent{{ $.Name }}s({{ $camelName }}s []*{{ $.Name }}) []*ent.{{ $.Name }} {
-	rest{{ $.Name }}s := make([]*ent.{{ $.Name }}, len({{ $camelName }}s))
-	for _, {{ $camelName }} := range {{ $camelName }}s {
-		rest{{ $.Name }}s = append(rest{{ $.Name }}s, rest{{ $.Name }}2ent{{ $.Name }}({{ $camelName }}))
 	}
 	return rest{{ $.Name }}s
 }
