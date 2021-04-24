@@ -26,14 +26,7 @@ type {{ $.Name }} struct {
         {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
     {{- end }}
     {{- range $e := $.Edges }}
-        {{- $annotation := $e.Annotations.EntRESTField }}
-        {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
-            {{- $tag := printf `json:"%s,omitempty"` $e.Name }}
-            {{- if $annotation.Validate }}
-                {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
-            {{- end }}
-            {{ pascal $e.Name }}{{ if not $e.Unique}} []{{ end }}*ent.{{ $e.Type.Name }} `{{ $tag }}`
-        {{- end }}
+        {{ pascal $e.Name }}{{ if not $e.Unique}} []{{ end }}*ent.{{ $e.Type.Name }} `{{ printf `json:"%s,omitempty"` $e.Name }}`
     {{- end }}
 }
 
@@ -77,8 +70,8 @@ type Create{{ $.Name }}Request struct {
         {{- end }}
     {{- end }}
     {{- range $e := $.Edges }}
-        {{- $annotation := $e.Annotations.EntRESTField }}
-        {{- if or (isNil $annotation) $annotation.Creatable }}
+        {{- $annotation := $e.Annotations.EntRESTEdge }}
+        {{- if or (isNil $annotation) $annotation.GetWith }}
             {{- $tag := printf `json:"%s,omitempty"` $e.Name }}
             {{- if $annotation.Validate }}
                 {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
@@ -104,8 +97,8 @@ type Update{{ $.Name }}Request struct {
         {{- end }}
     {{- end }}
     {{- range $e := $.Edges }}
-        {{- $annotation := $e.Annotations.EntRESTField }}
-        {{- if or (isNil $annotation) $annotation.Updatable }}
+        {{- $annotation := $e.Annotations.EntRESTEdge }}
+        {{- if or (isNil $annotation) $annotation.GetWith }}
             {{- $tag := printf `json:"%s,omitempty"` $e.Name }}
             {{- if $annotation.Validate }}
                 {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
@@ -127,8 +120,8 @@ func ent{{ $.Name }}2rest{{ $.Name }}({{ $camelName }} *ent.{{ $.Name }}) *{{ $.
             {{ $f.StructField }}: {{ $camelName }}.{{ $f.StructField }},
         {{- end }}
         {{- range $e := $.Edges }}
-            {{- $annotation := $e.Annotations.EntRESTField }}
-            {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
+            {{- $annotation := $e.Annotations.EntRESTEdge }}
+            {{- if or (isNil $annotation) $annotation.GetWith }}
                 {{- $pascalEName := pascal $e.Name }}
                 {{ $pascalEName }}: {{ $camelName }}.Edges.{{ $pascalEName }},
             {{- end }}
@@ -181,8 +174,8 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
             {{ $camelName }}s, err := client.{{ $.Name }}.
                 Query().
                 {{- range $e := $.Edges }}
-                    {{- $annotation := $e.Annotations.EntRESTField }}
-                    {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
+                    {{- $annotation := $e.Annotations.EntRESTEdge }}
+                    {{- if or (isNil $annotation) $annotation.QueryWith }}
                         With{{ pascal $e.Name }}().
                     {{- end }}
                 {{- end }}
@@ -227,8 +220,8 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 					{{ $lowerName }}.IDEQ(id),
 				).
 				{{- range $e := $.Edges }}
-                    {{- $annotation := $e.Annotations.EntRESTField }}
-                    {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
+                    {{- $annotation := $e.Annotations.EntRESTEdge }}
+                    {{- if or (isNil $annotation) $annotation.GetWith }}
                         With{{ pascal $e.Name }}().
                     {{- end }}
                 {{- end }}
@@ -283,8 +276,8 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                     {{- end }}
                 {{- end }}
                 {{- range $e := $.Edges }}
-                    {{- $annotation := $e.Annotations.EntRESTField }}
-                    {{- if or (isNil $annotation) $annotation.Creatable }}
+                    {{- $annotation := $e.Annotations.EntRESTEdge }}
+                    {{- if or (isNil $annotation) $annotation.GetWith }}
                         {{- $edgeField := pascal $e.Name }}
                         {{- if $e.Unique }}
                             Set{{ $edgeField }}ID(req.{{ $edgeField }}.ID).
@@ -343,8 +336,8 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                     {{- end }}
                 {{- end }}
                 {{- range $e := $.Edges }}
-                    {{- $annotation := $e.Annotations.EntRESTField }}
-                    {{- if or (isNil $annotation) $annotation.Updatable }}
+                    {{- $annotation := $e.Annotations.EntRESTEdge }}
+                    {{- if or (isNil $annotation) $annotation.GetWith }}
                         {{- $edgeField := pascal $e.Name }}
                         {{- if $e.Unique }}
                             Set{{ $edgeField }}ID(req.{{ $edgeField }}.ID).

@@ -106,7 +106,6 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 
 			users, err := client.User.
 				Query().
-				WithPets().
 				Limit(req.PageSize).
 				Offset((req.PageToken - 1) * req.PageSize).
 				All(r.Context())
