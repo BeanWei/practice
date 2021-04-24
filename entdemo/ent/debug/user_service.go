@@ -9,6 +9,7 @@ import (
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
+	"github.com/gogf/gf/text/gstr"
 )
 
 // User .
@@ -36,7 +37,7 @@ type ListUserRequest struct {
 
 // GetUserRequest .
 type GetUserRequest struct {
-	ID string `json:"id,omitempty"`
+	ID string `json:"id,omitempty" v:"required"`
 }
 
 // CreateUserRequest .
@@ -49,6 +50,7 @@ type CreateUserRequest struct {
 
 // UpdateUserRequest .
 type UpdateUserRequest struct {
+	ID     string  `json:"id,omitempty" v:"required"`
 	Remark string  `json:"remark,omitempty" v:"required#请输入备注"`
 	Phone  *string `json:"phone,omitempty"`
 	Pets   []*Pet  `json:"pets,omitempty"`
@@ -56,7 +58,7 @@ type UpdateUserRequest struct {
 
 // DeleteUserRequest .
 type DeleteUserRequest struct {
-	ID string `json:"id,omitempty"`
+	ID string `json:"id,omitempty" v:"required"`
 }
 
 func entUser2restUser(user *ent.User) *User {
@@ -135,11 +137,10 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				})
 			}
 
-			id := r.GetString("id")
 			user, err := client.User.
 				Query().
 				Where(
-					user.IDEQ(id),
+					user.IDEQ(req.ID),
 				).
 				WithPets().
 				First(r.Context())
@@ -198,9 +199,8 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				})
 			}
 
-			id := r.GetString("id")
 			res, err := client.User.
-				UpdateOneID(id).
+				UpdateOneID(req.ID).
 				SetRemark(req.Remark).
 				SetNillablePhone(req.Phone).
 				AddPetIDs(restPetIDs(req.Pets)...).
@@ -228,9 +228,12 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				})
 			}
 
-			id := r.GetString("id")
-			err := client.User.
-				DeleteOneID(id).
+			ids := gstr.SplitAndTrimSpace(req.ID, ",")
+			_, err := client.User.
+				Delete().
+				Where(
+					user.IDIn(ids...),
+				).
 				Exec(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{

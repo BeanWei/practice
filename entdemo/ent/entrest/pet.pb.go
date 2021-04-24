@@ -2,10 +2,12 @@ package entrest
 
 import (
 	"entdemo/ent"
+	"entdemo/ent/pet"
 	"entdemo/entrest"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
+	"github.com/gogf/gf/text/gstr"
 )
 
 type CreatePetRequest struct {
@@ -121,9 +123,12 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			})
 		}
 
-		id := r.GetString("id")
-		err := client.Pet.
-			DeleteOneID(id).
+		ids := gstr.SplitAndTrimSpace(r.GetString("id"), ",")
+		_, err := client.Pet.
+			Delete().
+			Where(
+				pet.IDIn(ids...),
+			).
 			Exec(r.Context())
 		if err != nil {
 			respHandler(r, &entrest.Result{
