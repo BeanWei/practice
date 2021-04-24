@@ -30,7 +30,7 @@ func Generate(g *gen.Graph, tplName string) error {
 	for _, n := range g.Nodes {
 		if annotation, ok := n.Annotations[EntRESTAPI]; ok {
 			apiAnnotation := annotation.(map[string]interface{})
-			if fmt.Sprintf("%v", apiAnnotation["Ignore"]) == "true" {
+			if fmt.Sprintf("%v", apiAnnotation["SkipGen"]) == "true" {
 				continue
 			}
 		}

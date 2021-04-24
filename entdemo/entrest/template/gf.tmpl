@@ -17,15 +17,12 @@ import (
 type {{ $.Name }} struct {
     ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
     {{- range $f := $.Fields }}
-        {{- $annotation := $f.Annotations.EntRESTField }}
-        {{- if not $annotation.Ignore }}
-            {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
-            {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
-        {{- end }}
+        {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
+        {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
     {{- end }}
     {{- range $e := $.Edges }}
         {{- $annotation := $e.Annotations.EntRESTField }}
-        {{- if not $annotation.Ignore }}
+        {{- if or (isNil $annotation) $annotation.Creatable $annotation.Updatable }}
             {{- $tag := printf `json:"%s,omitempty"` $e.Name }}
             {{- if $annotation.Validate }}
                 {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
@@ -44,7 +41,7 @@ type List{{ $.Name }}Request struct {
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if not $f.Sensitive }}
             {{- if $annotation := $f.Annotations.EntRESTField }}
-                {{- if and (not $annotation.Ignore) $annotation.Searchable }}
+                {{- if $annotation.Searchable }}
                     {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} `{{ $tag }}`
                 {{- end }}
             {{- else }}
@@ -64,7 +61,7 @@ type Create{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if $annotation := $f.Annotations.EntRESTField }}
-            {{- if and (not $annotation.Ignore) $annotation.Creatable }}
+            {{- if $annotation.Creatable }}
                 {{- if $annotation.Validate }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
@@ -74,6 +71,16 @@ type Create{{ $.Name }}Request struct {
             {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
         {{- end }}
     {{- end }}
+    {{- range $e := $.Edges }}
+        {{- $annotation := $e.Annotations.EntRESTField }}
+        {{- if or (isNil $annotation) $annotation.Creatable }}
+            {{- $tag := printf `json:"%s,omitempty"` $e.Name }}
+            {{- if $annotation.Validate }}
+                {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
+            {{- end }}
+            {{ pascal $e.Name }}{{ if not $e.Unique}} []{{ end }}*{{ $e.Type.Name }} `{{ $tag }}`
+        {{- end }}
+    {{- end }}
 }
 
 // Update{{ $.Name }}Request .
@@ -81,7 +88,7 @@ type Update{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if $annotation := $f.Annotations.EntRESTField }}
-            {{- if and (not $annotation.Ignore) $annotation.Updatable }}
+            {{- if $annotation.Updatable }}
                 {{- if $annotation.Validate }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
@@ -91,11 +98,47 @@ type Update{{ $.Name }}Request struct {
             {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
         {{- end }}
     {{- end }}
+    {{- range $e := $.Edges }}
+        {{- $annotation := $e.Annotations.EntRESTField }}
+        {{- if or (isNil $annotation) $annotation.Updatable }}
+            {{- $tag := printf `json:"%s,omitempty"` $e.Name }}
+            {{- if $annotation.Validate }}
+                {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
+            {{- end }}
+            {{ pascal $e.Name }}{{ if not $e.Unique}} []{{ end }}*{{ $e.Type.Name }} `{{ $tag }}`
+        {{- end }}
+    {{- end }}
 }
 
 // Delete{{ $.Name }}Request .
 type Delete{{ $.Name }}Request struct {
     ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
+}
+
+func ent{{ $.Name }}2rest{{ $.Name }}(e *ent.{{ $.Name }}) *{{ $.Name }} {
+	return &{{ $.Name }}{
+        ID: e.ID,
+		{{- range $f := $.Fields }}
+            {{ $f.StructField }}: e.{{ $f.StructField }},
+        {{- end }}
+	}
+}
+
+func rest{{ $.Name }}2ent{{ $.Name }}(r *{{ $.Name }}) *ent.{{ $.Name }} {
+	return &ent.{{ $.Name }}{
+		ID: r.ID,
+		{{- range $f := $.Fields }}
+            {{ $f.StructField }}: r.{{ $f.StructField }},
+        {{- end }}
+	}
+}
+
+func rest{{ $.Name }}IDs(items []*{{ $.Name }}) []string {
+	ids := make([]string, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+	return ids
 }
 
 func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
@@ -193,7 +236,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 Create().
                 {{- range $f := $.Fields }}
                     {{- if $annotation := $f.Annotations.EntRESTField }}
-                        {{- if and (not $annotation.Ignore) $annotation.Creatable }}
+                        {{- if $annotation.Creatable }}
                             {{- if $f.NillableValue }}
                                 SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                             {{- else }}
@@ -205,6 +248,17 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                             SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                         {{- else }}
                             Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                        {{- end }}
+                    {{- end }}
+                {{- end }}
+                {{- range $e := $.Edges }}
+                    {{- $annotation := $e.Annotations.EntRESTField }}
+                    {{- if or (isNil $annotation) $annotation.Creatable }}
+                        {{- $edgeField := pascal $e.Name }}
+                        {{- if $e.Unique }}
+                            Set{{ $edgeField }}ID(req.{{ $edgeField }}.ID).
+                        {{- else }}
+                            Add{{ $e.Type.Name }}IDs(rest{{ $e.Type.Name }}IDs(req.{{ $edgeField }})...).
                         {{- end }}
                     {{- end }}
                 {{- end }}
@@ -242,7 +296,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 UpdateOneID(id).
                 {{- range $f := $.Fields }}
                     {{- if $annotation := $f.Annotations.EntRESTField }}
-                        {{- if and (not $annotation.Ignore) $annotation.Updatable }}
+                        {{- if $annotation.Updatable }}
                             {{- if $f.NillableValue }}
                                 SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                             {{- else }}
@@ -254,6 +308,17 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                             SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                         {{- else }}
                             Set{{ $f.StructField }}(req.{{ $f.StructField }}).
+                        {{- end }}
+                    {{- end }}
+                {{- end }}
+                {{- range $e := $.Edges }}
+                    {{- $annotation := $e.Annotations.EntRESTField }}
+                    {{- if or (isNil $annotation) $annotation.Updatable }}
+                        {{- $edgeField := pascal $e.Name }}
+                        {{- if $e.Unique }}
+                            Set{{ $edgeField }}ID(req.{{ $edgeField }}.ID).
+                        {{- else }}
+                            Add{{ $e.Type.Name }}IDs(rest{{ $e.Type.Name }}IDs(req.{{ $edgeField }})...).
                         {{- end }}
                     {{- end }}
                 {{- end }}

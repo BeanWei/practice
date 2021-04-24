@@ -63,7 +63,8 @@ func (User) Edges() []ent.Edge {
 		edge.To("pets", Pet.Type).
 			Annotations(
 				entrest.Field{
-					Ignore: true,
+					Creatable: true,
+					Updatable: true,
 				},
 			),
 	}

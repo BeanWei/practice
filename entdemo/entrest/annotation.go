@@ -11,8 +11,6 @@ const (
 
 // Field 接口字段注解
 type Field struct {
-	// 忽略此字段在业务实体中生成，一般用于 edge 关联字段
-	Ignore bool
 	// 表单验证规则: 遵循 gf 的验证规则
 	Validate string
 	// 可新建
@@ -31,7 +29,7 @@ func (Field) Name() string {
 // API 接口配置注解
 type API struct {
 	// 忽略此 schema 接口自动生成
-	Ignore bool
+	SkipGen bool
 	// 接口 uri 前缀
 	Prefix string
 	// 中间件

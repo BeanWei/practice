@@ -20,6 +20,7 @@ type User struct {
 	Remark    string     `json:"remark,omitempty"`
 	Name      string     `json:"name,omitempty"`
 	Phone     *string    `json:"phone,omitempty"`
+	Pets      []*ent.Pet `json:"pets,omitempty"`
 }
 
 // ListUserRequest .
@@ -41,17 +42,55 @@ type CreateUserRequest struct {
 	Remark string  `json:"remark,omitempty" v:"required#请输入备注"`
 	Name   string  `json:"name,omitempty" v:"required#请输入用户的名字"`
 	Phone  *string `json:"phone,omitempty"`
+	Pets   []*Pet  `json:"pets,omitempty"`
 }
 
 // UpdateUserRequest .
 type UpdateUserRequest struct {
 	Remark string  `json:"remark,omitempty" v:"required#请输入备注"`
 	Phone  *string `json:"phone,omitempty"`
+	Pets   []*Pet  `json:"pets,omitempty"`
 }
 
 // DeleteUserRequest .
 type DeleteUserRequest struct {
 	ID string `json:"id,omitempty"`
+}
+
+func entUser2restUser(e *ent.User) *User {
+	return &User{
+		ID:        e.ID,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		DeletedAt: e.DeletedAt,
+		CreatedBy: e.CreatedBy,
+		UpdatedBy: e.UpdatedBy,
+		Remark:    e.Remark,
+		Name:      e.Name,
+		Phone:     e.Phone,
+	}
+}
+
+func restUser2entUser(r *User) *ent.User {
+	return &ent.User{
+		ID:        r.ID,
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
+		DeletedAt: r.DeletedAt,
+		CreatedBy: r.CreatedBy,
+		UpdatedBy: r.UpdatedBy,
+		Remark:    r.Remark,
+		Name:      r.Name,
+		Phone:     r.Phone,
+	}
+}
+
+func restUserIDs(items []*User) []string {
+	ids := make([]string, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+	return ids
 }
 
 func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
@@ -128,6 +167,7 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				SetRemark(req.Remark).
 				SetName(req.Name).
 				SetNillablePhone(req.Phone).
+				AddPetIDs(restPetIDs(req.Pets)...).
 				Save(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{
@@ -157,6 +197,7 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				UpdateOneID(id).
 				SetRemark(req.Remark).
 				SetNillablePhone(req.Phone).
+				AddPetIDs(restPetIDs(req.Pets)...).
 				Save(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{

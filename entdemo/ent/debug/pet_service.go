@@ -41,17 +41,53 @@ type GetPetRequest struct {
 type CreatePetRequest struct {
 	Remark string `json:"remark,omitempty" v:"required#请输入备注"`
 	Name   string `json:"name,omitempty" v:"required#请输入宠物的名字"`
+	Owner  *User  `json:"owner,omitempty"`
 }
 
 // UpdatePetRequest .
 type UpdatePetRequest struct {
 	Remark string `json:"remark,omitempty" v:"required#请输入备注"`
 	Name   string `json:"name,omitempty" v:"required#请输入宠物的名字"`
+	Owner  *User  `json:"owner,omitempty"`
 }
 
 // DeletePetRequest .
 type DeletePetRequest struct {
 	ID string `json:"id,omitempty"`
+}
+
+func entPet2restPet(e *ent.Pet) *Pet {
+	return &Pet{
+		ID:        e.ID,
+		CreatedAt: e.CreatedAt,
+		UpdatedAt: e.UpdatedAt,
+		DeletedAt: e.DeletedAt,
+		CreatedBy: e.CreatedBy,
+		UpdatedBy: e.UpdatedBy,
+		Remark:    e.Remark,
+		Name:      e.Name,
+	}
+}
+
+func restPet2entPet(r *Pet) *ent.Pet {
+	return &ent.Pet{
+		ID:        r.ID,
+		CreatedAt: r.CreatedAt,
+		UpdatedAt: r.UpdatedAt,
+		DeletedAt: r.DeletedAt,
+		CreatedBy: r.CreatedBy,
+		UpdatedBy: r.UpdatedBy,
+		Remark:    r.Remark,
+		Name:      r.Name,
+	}
+}
+
+func restPetIDs(items []*Pet) []string {
+	ids := make([]string, len(items))
+	for _, item := range items {
+		ids = append(ids, item.ID)
+	}
+	return ids
 }
 
 func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
@@ -133,6 +169,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				Create().
 				SetRemark(req.Remark).
 				SetName(req.Name).
+				SetOwnerID(req.Owner.ID).
 				Save(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{
@@ -164,6 +201,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				UpdateOneID(id).
 				SetRemark(req.Remark).
 				SetName(req.Name).
+				SetOwnerID(req.Owner.ID).
 				Save(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{

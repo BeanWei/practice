@@ -31,6 +31,25 @@ type ListPetRequest struct {
 	Sort      string `json:"sort,omitempty"`
 }
 
+type Pet struct {
+	ID   string
+	Name string
+}
+
+func entPet2restPet(e *ent.Pet) *Pet {
+	return &Pet{
+		ID:   e.ID,
+		Name: e.Name,
+	}
+}
+
+func restPet2entPet(r *Pet) *ent.Pet {
+	return &ent.Pet{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
 func Middleware(r *ghttp.Request) {
 	// 中间件处理逻辑
 	r.Middleware.Next()
