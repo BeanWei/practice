@@ -1,8 +1,8 @@
 package entrest
 
 import (
-	"entdemo/ent"
 	"entdemo/entrest"
+    "{{ trimRightStr $.Schema "/schema" }}"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
@@ -13,6 +13,28 @@ import (
     {{- end }}
 )
 
+// {{ $.Name }} .
+type {{ $.Name }} struct {
+    ID {{ $.ID.Type }} {{ with $.Annotations.Fields.StructTag.id }}`{{ . }}`{{ else }}`{{ $.ID.StructTag }}`{{ end }}
+    {{- range $f := $.Fields }}
+        {{- $annotation := $f.Annotations.EntRESTField }}
+        {{- if not $annotation.Ignore }}
+            {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
+            {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} {{ if not $f.Sensitive }}`{{ $tag }}`{{ else }}`json:"-"`{{ end }}
+        {{- end }}
+    {{- end }}
+    {{- range $e := $.Edges }}
+        {{- $annotation := $e.Annotations.EntRESTField }}
+        {{- if not $annotation.Ignore }}
+            {{- $tag := printf `json:"%s,omitempty"` $e.Name }}
+            {{- if $annotation.Validate }}
+                {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
+            {{- end }}
+            {{ pascal $e.Name }}{{ if not $e.Unique}} []{{ end }}*ent.{{ $e.Type.Name }} `{{ $tag }}`
+        {{- end }}
+    {{- end }}
+}
+
 // List{{ $.Name }}Request .
 type List{{ $.Name }}Request struct {
 	PageSize  int    `json:"pageSize,omitempty"`
@@ -22,7 +44,7 @@ type List{{ $.Name }}Request struct {
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if not $f.Sensitive }}
             {{- if $annotation := $f.Annotations.EntRESTField }}
-                {{- if $annotation.Searchable }}
+                {{- if and (not $annotation.Ignore) $annotation.Searchable }}
                     {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} `{{ $tag }}`
                 {{- end }}
             {{- else }}
@@ -42,7 +64,7 @@ type Create{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if $annotation := $f.Annotations.EntRESTField }}
-            {{- if $annotation.Creatable }}
+            {{- if and (not $annotation.Ignore) $annotation.Creatable }}
                 {{- if $annotation.Validate }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
@@ -59,7 +81,7 @@ type Update{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if $annotation := $f.Annotations.EntRESTField }}
-            {{- if $annotation.Updatable }}
+            {{- if and (not $annotation.Ignore) $annotation.Updatable }}
                 {{- if $annotation.Validate }}
                     {{- $tag = printf `%s v:"%s"` $tag $annotation.Validate }}
                 {{- end }}
@@ -171,7 +193,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 Create().
                 {{- range $f := $.Fields }}
                     {{- if $annotation := $f.Annotations.EntRESTField }}
-                        {{- if $annotation.Creatable }}
+                        {{- if and (not $annotation.Ignore) $annotation.Creatable }}
                             {{- if $f.NillableValue }}
                                 SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                             {{- else }}
@@ -220,7 +242,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 UpdateOneID(id).
                 {{- range $f := $.Fields }}
                     {{- if $annotation := $f.Annotations.EntRESTField }}
-                        {{- if $annotation.Updatable }}
+                        {{- if and (not $annotation.Ignore) $annotation.Updatable }}
                             {{- if $f.NillableValue }}
                                 SetNillable{{ $f.StructField }}(req.{{ $f.StructField }}).
                             {{- else }}

@@ -28,6 +28,13 @@ func Generate(g *gen.Graph, tplName string) error {
 
 	var assets assets
 	for _, n := range g.Nodes {
+		if annotation, ok := n.Annotations[EntRESTAPI]; ok {
+			apiAnnotation := annotation.(map[string]interface{})
+			if fmt.Sprintf("%v", apiAnnotation["Ignore"]) == "true" {
+				continue
+			}
+		}
+
 		assets.dirs = append(assets.dirs, filepath.Join(g.Config.Target, PkgName))
 		b := bytes.NewBuffer(nil)
 		if err := tpl.Execute(b, n); err != nil {

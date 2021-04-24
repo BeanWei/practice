@@ -3,12 +3,26 @@ package entrest
 import (
 	"entdemo/ent"
 	"entdemo/entrest"
+	"time"
 
 	"entdemo/middleware"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 )
+
+// Pet .
+type Pet struct {
+	ID        string     `json:"id,omitempty"`
+	CreatedAt time.Time  `json:"createdAt,omitempty"`
+	UpdatedAt time.Time  `json:"updatedAt,omitempty"`
+	DeletedAt *time.Time `json:"deletedAt,omitempty"`
+	CreatedBy string     `json:"createdBy,omitempty"`
+	UpdatedBy string     `json:"updatedBy,omitempty"`
+	Remark    string     `json:"remark,omitempty"`
+	Name      string     `json:"name,omitempty"`
+	Owner     *ent.User  `json:"owner,omitempty"`
+}
 
 // ListPetRequest .
 type ListPetRequest struct {
