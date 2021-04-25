@@ -74,6 +74,25 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			})
 		}
 
+		duplicateID, err := client.Pet.
+			Query().
+			Where(
+				pet.NameEQ(req.Name),
+			).
+			FirstID(r.Context())
+		if err == nil || !ent.IsNotFound(err) {
+			respHandler(r, &entrest.Result{
+				ErrorType:   entrest.ErrorDuplicate,
+				Error:       err,
+				DuplicateID: duplicateID,
+			})
+		} else {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorCheckDuplicate,
+				Error:     err,
+			})
+		}
+
 		res, err := client.Pet.
 			Create().
 			SetName(req.Name).

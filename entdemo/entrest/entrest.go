@@ -4,6 +4,7 @@ package entrest
 const (
 	ErrorParameterBind int = 1 << iota
 	ErrorDuplicate
+	ErrorCheckDuplicate
 	ErrorNotFound
 	ErrorList
 	ErrorGet
@@ -24,11 +25,12 @@ const (
 
 // Result .
 type Result struct {
-	Data      interface{}
-	IsList    bool
-	Total     int
-	ErrorType int
-	Error     error
+	Data        interface{}
+	IsList      bool
+	Total       int
+	ErrorType   int
+	Error       error
+	DuplicateID string
 }
 
 // MiddlewareConfig 中间件定义
