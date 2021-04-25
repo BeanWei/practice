@@ -168,6 +168,23 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 					Error:     err,
 				})
 			}
+			duplicateCount, err := client.User.
+				Query().
+				Where(
+					user.NameEQ(req.Name),
+				).
+				Count(r.Context())
+			if err != nil {
+				respHandler(r, &entrest.Result{
+					ErrorType: entrest.ErrorCheckDuplicate,
+					Error:     err,
+				})
+			} else if duplicateCount > 0 {
+				respHandler(r, &entrest.Result{
+					ErrorType: entrest.ErrorDuplicate,
+					Error:     err,
+				})
+			}
 
 			res, err := client.User.
 				Create().

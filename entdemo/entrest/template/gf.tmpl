@@ -276,7 +276,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                         ErrorType: entrest.ErrorCheckDuplicate,
                         Error:     err,
                     })
-                } else if existsCount > 0 {
+                } else if duplicateCount > 0 {
                     respHandler(r, &entrest.Result{
                         ErrorType: entrest.ErrorDuplicate,
                         Error:     err,
@@ -366,7 +366,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                         ErrorType: entrest.ErrorCheckDuplicate,
                         Error:     err,
                     })
-                } else if existsCount > 0 {
+                } else if duplicateCount > 0 {
                     respHandler(r, &entrest.Result{
                         ErrorType: entrest.ErrorDuplicate,
                         Error:     err,

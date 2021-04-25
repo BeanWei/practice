@@ -34,6 +34,7 @@ func (User) Annotations() []schema.Annotation {
 func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("name").
+			Unique().
 			Comment("用户名字").
 			Annotations(
 				entrest.Field{
