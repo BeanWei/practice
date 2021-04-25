@@ -255,6 +255,35 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 })
             }
 
+            {{- $uniqueFields := list }}
+            {{- range $f := $.Fields }}
+                {{- $annotation := $f.Annotations.EntRESTField }}
+                {{- if and (or (isNil $annotation) $annotation.Creatable) $f.Unique }}
+                    {{- $uniqueFields = append $uniqueFields $f.StructField }}
+                {{- end }}
+            {{- end }}
+            {{- if ne (len $uniqueFields) 0 }}
+                duplicateCount, err := client.{{ $.Name }}.
+                    Query().
+                    Where(
+                        {{- range $uf := $uniqueFields }}
+                            {{ $lowerName }}.{{ $uf }}EQ(req.{{ $uf }}),
+                        {{- end }}
+                    ).
+                    Count(r.Context())
+                if err != nil {
+                    respHandler(r, &entrest.Result{
+                        ErrorType: entrest.ErrorCheckDuplicate,
+                        Error:     err,
+                    })
+                } else if existsCount > 0 {
+                    respHandler(r, &entrest.Result{
+                        ErrorType: entrest.ErrorDuplicate,
+                        Error:     err,
+                    })
+                }
+            {{- end }}
+
             res, err := client.{{ $.Name }}.
                 Create().
                 {{- range $f := $.Fields }}
@@ -292,6 +321,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                     Error:     err,
                 })
             }
+
             respHandler(r, &entrest.Result{
                 Data: res,
             })
@@ -313,6 +343,36 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                     Error:     err,
                 })
             }
+
+            {{- $uniqueFields := list }}
+            {{- range $f := $.Fields }}
+                {{- $annotation := $f.Annotations.EntRESTField }}
+                {{- if and (or (isNil $annotation) $annotation.Updatable) $f.Unique }}
+                    {{- $uniqueFields = append $uniqueFields $f.StructField }}
+                {{- end }}
+            {{- end }}
+            {{- if ne (len $uniqueFields) 0 }}
+                duplicateCount, err := client.{{ $.Name }}.
+                    Query().
+                    Where(
+                        {{ $lowerName }}.IDNEQ(req.ID),
+                        {{- range $uf := $uniqueFields }}
+                            {{ $lowerName }}.{{ $uf }}EQ(req.{{ $uf }}),
+                        {{- end }}
+                    ).
+                    Count(r.Context())
+                if err != nil {
+                    respHandler(r, &entrest.Result{
+                        ErrorType: entrest.ErrorCheckDuplicate,
+                        Error:     err,
+                    })
+                } else if existsCount > 0 {
+                    respHandler(r, &entrest.Result{
+                        ErrorType: entrest.ErrorDuplicate,
+                        Error:     err,
+                    })
+                }
+            {{- end }}
 
             res, err := client.{{ $.Name }}.
                 UpdateOneID(req.ID).
@@ -351,6 +411,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                     Error:     err,
                 })
             }
+
             respHandler(r, &entrest.Result{
                 Data: res,
             })
@@ -386,6 +447,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                     Error:     err,
                 })
             }
+
             respHandler(r, &entrest.Result{})
         },
     )

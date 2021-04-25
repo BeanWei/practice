@@ -186,6 +186,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 					Error:     err,
 				})
 			}
+
 			respHandler(r, &entrest.Result{
 				Data: res,
 			})
@@ -217,6 +218,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 					Error:     err,
 				})
 			}
+
 			respHandler(r, &entrest.Result{
 				Data: res,
 			})
@@ -249,6 +251,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 					Error:     err,
 				})
 			}
+
 			respHandler(r, &entrest.Result{})
 		},
 	)

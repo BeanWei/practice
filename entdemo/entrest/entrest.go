@@ -25,12 +25,11 @@ const (
 
 // Result .
 type Result struct {
-	Data        interface{}
-	IsList      bool
-	Total       int
-	ErrorType   int
-	Error       error
-	DuplicateID string
+	Data      interface{}
+	IsList    bool
+	Total     int
+	ErrorType int
+	Error     error
 }
 
 // MiddlewareConfig 中间件定义

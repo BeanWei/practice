@@ -74,21 +74,20 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			})
 		}
 
-		duplicateID, err := client.Pet.
+		existsCount, err := client.Pet.
 			Query().
 			Where(
 				pet.NameEQ(req.Name),
 			).
-			FirstID(r.Context())
-		if err == nil || !ent.IsNotFound(err) {
-			respHandler(r, &entrest.Result{
-				ErrorType:   entrest.ErrorDuplicate,
-				Error:       err,
-				DuplicateID: duplicateID,
-			})
-		} else {
+			Count(r.Context())
+		if err != nil {
 			respHandler(r, &entrest.Result{
 				ErrorType: entrest.ErrorCheckDuplicate,
+				Error:     err,
+			})
+		} else if existsCount > 0 {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorDuplicate,
 				Error:     err,
 			})
 		}
@@ -118,6 +117,26 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 		}
 
 		id := r.GetString("id")
+
+		existsCount, err := client.Pet.
+			Query().
+			Where(
+				pet.IDNEQ(id),
+				pet.NameEQ(req.Name),
+			).
+			Count(r.Context())
+		if err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorCheckDuplicate,
+				Error:     err,
+			})
+		} else if existsCount > 0 {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorDuplicate,
+				Error:     err,
+			})
+		}
+
 		res, err := client.Pet.
 			UpdateOneID(id).
 			SetName(req.Name).
@@ -128,6 +147,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				Error:     err,
 			})
 		}
+
 		respHandler(r, &entrest.Result{
 			Data: res,
 		})
