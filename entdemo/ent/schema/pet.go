@@ -68,10 +68,10 @@ func (Pet) Fields() []ent.Field {
 			Comment("宠物名字").
 			Annotations(
 				entrest.Field{
-					Validate:   "required#请输入宠物的名字",
-					Creatable:  true,
-					Updatable:  true,
-					Searchable: true,
+					Validate:  "required#请输入宠物的名字",
+					Creatable: true,
+					Updatable: true,
+					Queryable: true,
 				},
 			),
 	}

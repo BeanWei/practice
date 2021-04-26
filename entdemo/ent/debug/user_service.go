@@ -4,6 +4,7 @@ package entrest
 
 import (
 	"entdemo/ent"
+	"entdemo/ent/predicate"
 	"entdemo/ent/user"
 	"entdemo/entrest"
 	"time"
@@ -32,7 +33,7 @@ type ListUserRequest struct {
 	PageSize  int     `json:"pageSize,omitempty"`
 	PageToken int     `json:"pageToken,omitempty"`
 	Sort      string  `json:"sort,omitempty"`
-	Name      string  `json:"name,omitempty"`
+	Name      *string `json:"name,omitempty"`
 	Phone     *string `json:"phone,omitempty"`
 }
 
@@ -107,8 +108,39 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				})
 			}
 
-			users, err := client.User.
-				Query().
+			userQuery := client.User.Query()
+
+			if req.Sort != "" {
+				sortName, sortOp := entrest.GetSortArg(req.Sort)
+				fieldsMap := map[string]string{
+					"name":  user.FieldName,
+					"phone": user.FieldPhone,
+				}
+				if fieldName, ok := fieldsMap[sortName]; ok {
+					if sortOp == entrest.ASC {
+						userQuery.Order(
+							ent.Asc(fieldName),
+						)
+					} else if sortOp == entrest.DESC {
+						userQuery.Order(
+							ent.Desc(fieldName),
+						)
+					}
+				}
+			}
+
+			wherePlaceholder := make([]predicate.User, 0)
+			if req.Name != nil {
+				wherePlaceholder = append(wherePlaceholder, user.NameEQ(*req.Name))
+			}
+			if req.Phone != nil {
+				wherePlaceholder = append(wherePlaceholder, user.PhoneEQ(*req.Phone))
+			}
+			if len(wherePlaceholder) > 0 {
+				userQuery.Where(wherePlaceholder...)
+			}
+
+			users, err := userQuery.
 				Limit(req.PageSize).
 				Offset((req.PageToken - 1) * req.PageSize).
 				All(r.Context())

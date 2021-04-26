@@ -38,10 +38,10 @@ func (User) Fields() []ent.Field {
 			Comment("用户名字").
 			Annotations(
 				entrest.Field{
-					Validate:   "required#请输入用户的名字",
-					Creatable:  true,
-					Updatable:  false,
-					Searchable: true,
+					Validate:  "required#请输入用户的名字",
+					Creatable: true,
+					Updatable: false,
+					Queryable: true,
 				},
 			),
 		field.String("phone").
@@ -50,9 +50,9 @@ func (User) Fields() []ent.Field {
 			Comment("联系电话").
 			Annotations(
 				entrest.Field{
-					Creatable:  true,
-					Updatable:  true,
-					Searchable: true,
+					Creatable: true,
+					Updatable: true,
+					Queryable: true,
 				},
 			),
 	}

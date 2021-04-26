@@ -8,6 +8,7 @@ import (
 	"entdemo/entrest"
     "{{ $.Config.Package }}"
     "{{ $.Config.Package }}/{{ $.Package }}"
+    "{{ $.Config.Package }}/predicate"
 
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
@@ -39,12 +40,9 @@ type List{{ $.Name }}Request struct {
     {{- range $f := $.Fields }}
         {{- $tag := $f.StructTag }}{{ with $tags := $.Annotations.Fields.StructTag }}{{ with index $tags $f.Name }}{{ $tag = . }}{{ end }}{{ end }}
         {{- if not $f.Sensitive }}
-            {{- if $annotation := $f.Annotations.EntRESTField }}
-                {{- if $annotation.Searchable }}
-                    {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} `{{ $tag }}`
-                {{- end }}
-            {{- else }}
-                {{ $f.StructField }} {{ if $f.NillableValue }}*{{ end }}{{ $f.Type }} `{{ $tag }}`
+            {{- $annotation := $f.Annotations.EntRESTField }}
+            {{- if or (isNil $annotation) $annotation.Queryable}}
+                {{ $f.StructField }} *{{ $f.Type }} `{{ $tag }}`
             {{- end }}
         {{- end }}
     {{- end }}
@@ -171,8 +169,55 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 })
             }
 
-            {{ $camelName }}s, err := client.{{ $.Name }}.
-                Query().
+            {{ $camelName }}Query := client.{{ $.Name }}.Query()
+
+            if req.Sort != "" {
+                sortName, sortOp := entrest.GetSortArg(req.Sort)
+                fieldsMap := map[string]string{
+                    {{- range $f := $.Fields }}
+                        {{- if not $f.Sensitive }}
+                            {{- $annotation := $f.Annotations.EntRESTField }}
+                            {{- if or (isNil $annotation) $annotation.Queryable}}
+                                "{{ $f.Name }}": {{ $.Package }}.Field{{ $f.StructField }},
+                            {{- end }}
+                        {{- end }}
+                    {{- end }}
+                }
+                if fieldName, ok := fieldsMap[sortName]; ok {
+                    if sortOp == entrest.ASC {
+                        {{ $camelName }}Query.Order(
+                            ent.Asc(fieldName),
+                        )
+                    } else if sortOp == entrest.DESC {
+                        {{ $camelName }}Query.Order(
+                            ent.Desc(fieldName),
+                        )
+                    }
+                }
+            }
+
+            wherePlaceholder := make([]predicate.{{ $.Name }}, 0)
+            {{- range $f := $.Fields }}
+                {{- if not $f.Sensitive }}
+                    {{- $annotation := $f.Annotations.EntRESTField }}
+                    {{- if or (isNil $annotation) $annotation.Queryable}}
+                        if req.{{ $f.StructField }} != nil {
+                            {{- if $annotation.QueryOp }}
+                                wherePlaceholder = append(wherePlaceholder, {{ $.Package }}.{{ $f.StructField }}{{ $annotation.QueryOp }}(*req.{{ $f.StructField }}))
+                            {{- else }}
+                                {{- $ops := ops $f }}
+                                {{- $defaultOp := index $ops 0 }}
+                                wherePlaceholder = append(wherePlaceholder, {{ $.Package }}.{{ $f.StructField }}{{ $defaultOp.Name }}(*req.{{ $f.StructField }}))
+                            {{- end }}
+                        }
+                    {{- end }}
+                {{- end }}
+            {{- end }}
+            if len(wherePlaceholder) > 0 {
+                {{ $camelName }}Query.Where(wherePlaceholder...)
+            }
+
+            {{ $camelName }}s, err := {{ $camelName }}Query.
                 {{- range $e := $.Edges }}
                     {{- $annotation := $e.Annotations.EntRESTEdge }}
                     {{- if or (isNil $annotation) $annotation.QueryWith }}

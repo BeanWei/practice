@@ -33,8 +33,12 @@ type Field struct {
 	Creatable bool
 	// 可更新
 	Updatable bool
-	// 可检索
-	Searchable bool
+	// 可排序
+	Sortable bool
+	// 可查询/筛选
+	Queryable bool
+	// 查询操作符
+	QueryOp string
 }
 
 // Name describes the Field annotation name.

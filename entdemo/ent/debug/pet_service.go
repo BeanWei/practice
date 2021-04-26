@@ -5,6 +5,7 @@ package entrest
 import (
 	"entdemo/ent"
 	"entdemo/ent/pet"
+	"entdemo/ent/predicate"
 	"entdemo/entrest"
 	"time"
 
@@ -30,10 +31,10 @@ type Pet struct {
 
 // ListPetRequest .
 type ListPetRequest struct {
-	PageSize  int    `json:"pageSize,omitempty"`
-	PageToken int    `json:"pageToken,omitempty"`
-	Sort      string `json:"sort,omitempty"`
-	Name      string `json:"name,omitempty"`
+	PageSize  int     `json:"pageSize,omitempty"`
+	PageToken int     `json:"pageToken,omitempty"`
+	Sort      string  `json:"sort,omitempty"`
+	Name      *string `json:"name,omitempty"`
 }
 
 // GetPetRequest .
@@ -107,8 +108,35 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				})
 			}
 
-			pets, err := client.Pet.
-				Query().
+			petQuery := client.Pet.Query()
+
+			if req.Sort != "" {
+				sortName, sortOp := entrest.GetSortArg(req.Sort)
+				fieldsMap := map[string]string{
+					"name": pet.FieldName,
+				}
+				if fieldName, ok := fieldsMap[sortName]; ok {
+					if sortOp == entrest.ASC {
+						petQuery.Order(
+							ent.Asc(fieldName),
+						)
+					} else if sortOp == entrest.DESC {
+						petQuery.Order(
+							ent.Desc(fieldName),
+						)
+					}
+				}
+			}
+
+			wherePlaceholder := make([]predicate.Pet, 0)
+			if req.Name != nil {
+				wherePlaceholder = append(wherePlaceholder, pet.NameEQ(*req.Name))
+			}
+			if len(wherePlaceholder) > 0 {
+				petQuery.Where(wherePlaceholder...)
+			}
+
+			pets, err := petQuery.
 				WithOwner().
 				Limit(req.PageSize).
 				Offset((req.PageToken - 1) * req.PageSize).

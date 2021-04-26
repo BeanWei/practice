@@ -3,6 +3,7 @@ package entrest
 import (
 	"entdemo/ent"
 	"entdemo/ent/pet"
+	"entdemo/ent/predicate"
 	"entdemo/entrest"
 
 	"github.com/gogf/gf/frame/g"
@@ -28,9 +29,10 @@ type GetPetRequest struct {
 }
 
 type ListPetRequest struct {
-	PageSize  int    `json:"pageSize,omitempty"`
-	PageToken int    `json:"pageToken,omitempty"`
-	Sort      string `json:"sort,omitempty"`
+	PageSize  int     `json:"pageSize,omitempty" v:"required|min:1"`
+	PageToken int     `json:"pageToken,omitempty" v:"required|min:1"`
+	Sort      string  `json:"sortField,omitempty"`
+	Name      *string `json:"name,omitempty"`
 }
 
 type Pet struct {
@@ -210,8 +212,36 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			})
 		}
 
-		res, err := client.Pet.
-			Query().
+		petQuery := client.Pet.Query()
+
+		if req.Sort != "" {
+			sortName, sortOp := entrest.GetSortArg(req.Sort)
+			fieldsMap := map[string]string{
+				"name": pet.FieldName,
+			}
+			if fieldName, ok := fieldsMap[sortName]; ok {
+				if sortOp == entrest.ASC {
+					petQuery.Order(
+						ent.Asc(fieldName),
+					)
+				} else if sortOp == entrest.DESC {
+					petQuery.Order(
+						ent.Desc(fieldName),
+					)
+				}
+			}
+
+		}
+
+		wherePlaceholder := make([]predicate.Pet, 0)
+		if req.Name != nil {
+			wherePlaceholder = append(wherePlaceholder, pet.NameEQ(*req.Name))
+		}
+		if len(wherePlaceholder) > 0 {
+			petQuery.Where(wherePlaceholder...)
+		}
+
+		res, err := petQuery.
 			Limit(req.PageSize).
 			Offset((req.PageToken - 1) * req.PageSize).
 			All(r.Context())
@@ -221,6 +251,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				Error:     err,
 			})
 		}
+
 		respHandler(r, &entrest.Result{
 			Data:   res,
 			IsList: true,
