@@ -142,7 +142,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 				petQuery.Where(wherePlaceholder...)
 			}
 
-			qty, err := petQuery.Count(r.Context())
+			total, err := petQuery.Count(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{
 					ErrorType: entrest.ErrorList,
@@ -165,7 +165,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			res := entPets2restPets(pets)
 			respHandler(r, &entrest.Result{
 				Data:   res,
-				Total:  qty,
+				Total:  total,
 				IsList: true,
 			})
 		},

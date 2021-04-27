@@ -223,7 +223,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 {{ $camelName }}Query.Where(wherePlaceholder...)
             }
 
-            qty, err := {{ $camelName }}Query.Count(r.Context())
+            total, err := {{ $camelName }}Query.Count(r.Context())
             if err != nil {
                 respHandler(r, &entrest.Result{
                     ErrorType: entrest.ErrorList,
@@ -251,7 +251,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
             res := ent{{ $.Name }}s2rest{{ $.Name }}s({{ $camelName }}s)
             respHandler(r, &entrest.Result{
                 Data:   res,
-                Total:  qty,
+                Total:  total,
                 IsList: true,
             })
         },

@@ -147,7 +147,7 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 				userQuery.Where(wherePlaceholder...)
 			}
 
-			qty, err := userQuery.Count(r.Context())
+			total, err := userQuery.Count(r.Context())
 			if err != nil {
 				respHandler(r, &entrest.Result{
 					ErrorType: entrest.ErrorList,
@@ -169,7 +169,7 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 			res := entUsers2restUsers(users)
 			respHandler(r, &entrest.Result{
 				Data:   res,
-				Total:  qty,
+				Total:  total,
 				IsList: true,
 			})
 		},
