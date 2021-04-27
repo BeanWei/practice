@@ -92,6 +92,15 @@ func restPetIDs(items []*Pet) []string {
 	return ids
 }
 
+func getPetColumnForListRequest(field string) string {
+	switch field {
+	case "name":
+		return pet.FieldName
+	default:
+		return ""
+	}
+}
+
 func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
 	s := g.Server()
 
@@ -112,10 +121,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 
 			if req.Sort != "" {
 				sortName, sortOp := entrest.GetSortArg(req.Sort)
-				fieldsMap := map[string]string{
-					"name": pet.FieldName,
-				}
-				if fieldName, ok := fieldsMap[sortName]; ok {
+				if fieldName := getPetColumnForListRequest(sortName); fieldName != "" {
 					if sortOp == entrest.ASC {
 						petQuery.Order(
 							ent.Asc(fieldName),

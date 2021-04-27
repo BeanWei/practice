@@ -145,6 +145,22 @@ func rest{{ $.Name }}IDs(items []*{{ $.Name }}) []string {
 	return ids
 }
 
+func get{{ $.Name }}ColumnForListRequest(field string) string {
+	switch field {
+    {{- range $f := $.Fields }}
+        {{- if not $f.Sensitive }}
+            {{- $annotation := $f.Annotations.EntRESTField }}
+            {{- if or (isNil $annotation) $annotation.Queryable}}
+                case "{{ $f.Name }}":
+                    return {{ $.Package }}.Field{{ $f.StructField }}
+            {{- end }}
+        {{- end }}
+    {{- end }}
+	default:
+		return ""
+	}
+}
+
 func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
 	s := g.Server()
 
@@ -173,17 +189,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
 
             if req.Sort != "" {
                 sortName, sortOp := entrest.GetSortArg(req.Sort)
-                fieldsMap := map[string]string{
-                    {{- range $f := $.Fields }}
-                        {{- if not $f.Sensitive }}
-                            {{- $annotation := $f.Annotations.EntRESTField }}
-                            {{- if or (isNil $annotation) $annotation.Queryable}}
-                                "{{ $f.Name }}": {{ $.Package }}.Field{{ $f.StructField }},
-                            {{- end }}
-                        {{- end }}
-                    {{- end }}
-                }
-                if fieldName, ok := fieldsMap[sortName]; ok {
+                if fieldName := get{{ $.Name }}ColumnForListRequest(sortName); fieldName != "" {
                     if sortOp == entrest.ASC {
                         {{ $camelName }}Query.Order(
                             ent.Asc(fieldName),

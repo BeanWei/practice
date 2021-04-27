@@ -94,6 +94,17 @@ func restUserIDs(items []*User) []string {
 	return ids
 }
 
+func getUserColumnForListRequest(field string) string {
+	switch field {
+	case "name":
+		return user.FieldName
+	case "phone":
+		return user.FieldPhone
+	default:
+		return ""
+	}
+}
+
 func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request, result *entrest.Result)) {
 	s := g.Server()
 
@@ -112,11 +123,7 @@ func NewUserServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request
 
 			if req.Sort != "" {
 				sortName, sortOp := entrest.GetSortArg(req.Sort)
-				fieldsMap := map[string]string{
-					"name":  user.FieldName,
-					"phone": user.FieldPhone,
-				}
-				if fieldName, ok := fieldsMap[sortName]; ok {
+				if fieldName := getUserColumnForListRequest(sortName); fieldName != "" {
 					if sortOp == entrest.ASC {
 						userQuery.Order(
 							ent.Asc(fieldName),
