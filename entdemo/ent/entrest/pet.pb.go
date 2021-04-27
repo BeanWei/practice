@@ -247,6 +247,14 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			petQuery.Where(wherePlaceholder...)
 		}
 
+		qty, err := petQuery.Count(r.Context())
+		if err != nil {
+			respHandler(r, &entrest.Result{
+				ErrorType: entrest.ErrorList,
+				Error:     err,
+			})
+		}
+
 		res, err := petQuery.
 			Limit(req.PageSize).
 			Offset((req.PageToken - 1) * req.PageSize).
@@ -260,6 +268,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 
 		respHandler(r, &entrest.Result{
 			Data:   res,
+			Total:  qty,
 			IsList: true,
 		})
 	})

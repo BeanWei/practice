@@ -5,13 +5,13 @@ package entrest
 {{ $camelName := camel $.Name }}
 
 import (
-	"entdemo/entrest"
+    "entdemo/entrest"
     "{{ $.Config.Package }}"
     "{{ $.Config.Package }}/{{ $.Package }}"
     "{{ $.Config.Package }}/predicate"
 
-	"github.com/gogf/gf/frame/g"
-	"github.com/gogf/gf/net/ghttp"
+    "github.com/gogf/gf/frame/g"
+    "github.com/gogf/gf/net/ghttp"
     "github.com/gogf/gf/text/gstr"
 
     {{- $apiAnnotation := $.Annotations.EntRESTAPI }}
@@ -223,6 +223,14 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
                 {{ $camelName }}Query.Where(wherePlaceholder...)
             }
 
+            qty, err := {{ $camelName }}Query.Count(r.Context())
+            if err != nil {
+                respHandler(r, &entrest.Result{
+                    ErrorType: entrest.ErrorList,
+                    Error:     err,
+                })
+            }
+
             {{ $camelName }}s, err := {{ $camelName }}Query.
                 {{- range $e := $.Edges }}
                     {{- $annotation := $e.Annotations.EntRESTEdge }}
@@ -243,6 +251,7 @@ func New{{ $.Name }}ServiceHandler(client *ent.Client, respHandler func(r *ghttp
             res := ent{{ $.Name }}s2rest{{ $.Name }}s({{ $camelName }}s)
             respHandler(r, &entrest.Result{
                 Data:   res,
+                Total:  qty,
                 IsList: true,
             })
         },
