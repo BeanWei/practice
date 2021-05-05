@@ -1,11 +1,14 @@
 package entrest
 
 import (
+	"entdemo/apikit/errors"
+	"entdemo/apikit/resp"
 	"entdemo/ent"
 	"entdemo/ent/pet"
 	"entdemo/ent/predicate"
 	"entdemo/entrest"
 
+	"github.com/gogf/gf/errors/gerror"
 	"github.com/gogf/gf/frame/g"
 	"github.com/gogf/gf/net/ghttp"
 	"github.com/gogf/gf/text/gstr"
@@ -79,10 +82,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 	s.BindHandler("POST:/api/pet", func(r *ghttp.Request) {
 		var req CreatePetRequest
 		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
+			resp.Error(r, errors.InvalidArgument("pet", err.Error()))
 		}
 
 		existsCount, err := client.Pet.
@@ -92,15 +92,9 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			).
 			Count(r.Context())
 		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorCheckDuplicate,
-				Error:     err,
-			})
+			resp.Error(r, errors.DatabaseError("user", "check duplicate error"))
 		} else if existsCount > 0 {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorDuplicate,
-				Error:     err,
-			})
+			resp.Error(r, errors.AlreadyExists("user", "It already exists. Do not create it again."))
 		}
 
 		res, err := client.Pet.
@@ -108,23 +102,16 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			SetName(req.Name).
 			Save(r.Context())
 		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorCreate,
-				Error:     err,
-			})
+			resp.Error(r, errors.DatabaseError("user", "insert error"))
 		}
-		respHandler(r, &entrest.Result{
-			Data: res,
-		})
+
+		resp.OK(r, res)
 	})
 
 	s.BindHandler("PUT:/api/pet/{id}", func(r *ghttp.Request) {
 		var req UpdatePetRequest
 		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
+			entrest.Resp.InvalidArgument(r, err)
 		}
 
 		id := r.GetString("id")
@@ -137,15 +124,9 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			).
 			Count(r.Context())
 		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorCheckDuplicate,
-				Error:     err,
-			})
+			entrest.Resp.DatabaseError(r, gerror.Wrap(err, "check duplicate error"))
 		} else if existsCount > 0 {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorDuplicate,
-				Error:     err,
-			})
+			entrest.Resp.AlreadyExists(r, gerror.New("It already exists."))
 		}
 
 		res, err := client.Pet.
@@ -153,10 +134,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			SetName(req.Name).
 			Save(r.Context())
 		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorUpdate,
-				Error:     err,
-			})
+			entrest.Resp.DatabaseError(r, gerror.Wrap(err, "update error"))
 		}
 
 		respHandler(r, &entrest.Result{
@@ -167,10 +145,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 	s.BindHandler("DELETE:/api/pet/{id}", func(r *ghttp.Request) {
 		var req DeletePetRequest
 		if err := r.Parse(&req); err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorParameterBind,
-				Error:     err,
-			})
+			entrest.Resp.InvalidArgument(r, err)
 		}
 
 		ids := gstr.SplitAndTrimSpace(r.GetString("id"), ",")
@@ -181,10 +156,7 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 			).
 			Exec(r.Context())
 		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorDelete,
-				Error:     err,
-			})
+			entrest.Resp.DatabaseError(r, gerror.Wrap(err, "delete error"))
 		}
 		respHandler(r, &entrest.Result{})
 	})
@@ -202,10 +174,11 @@ func NewPetServiceHandler(client *ent.Client, respHandler func(r *ghttp.Request,
 		res, err := client.Pet.
 			Get(r.Context(), id)
 		if err != nil {
-			respHandler(r, &entrest.Result{
-				ErrorType: entrest.ErrorGet,
-				Error:     err,
-			})
+			if ent.IsNotFound(err) {
+				entrest.Resp.NotFound(r, gerror.Wrapf(err, "not found: %s", id))
+			} else {
+				entrest.Resp.DatabaseError(r, gerror.Wrap(err, "get error"))
+			}
 		}
 		respHandler(r, &entrest.Result{
 			Data: res,
