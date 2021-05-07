@@ -2,6 +2,15 @@
 /* eslint-disable */
 
 declare namespace API {
+  type SigninRequest = {
+    account: string;
+    password: string;
+  };
+
+  type SigninReply = {
+    sid: string;
+  };
+
   type CurrentUser = {
     name?: string;
     avatar?: string;

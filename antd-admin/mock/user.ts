@@ -8,27 +8,25 @@ const waitTime = (time: number = 100) => {
   });
 };
 
+let access = "admin";
+
 async function getFakeCaptcha(req: Request, res: Response) {
   await waitTime(2000);
   return res.json('captcha-xxx');
 }
 
 const getAccess = () => {
-  return 'admin';
+  return access;
 };
 
 // 代码中会兼容本地 service mock 以及部署站点的静态数据
 export default {
   // 支持值为 Object 和 Array
-  'GET /api/currentUser': (req: Request, res: Response) => {
+  'GET /api/user/me': (req: Request, res: Response) => {
     if (!getAccess()) {
       res.status(401).send({
-        data: {
-          isLogin: false,
-        },
-        errorCode: '401',
-        errorMessage: '请先登录！',
-        success: true,
+        code: 401,
+        message: '请先登录！',
       });
       return;
     }
@@ -105,49 +103,35 @@ export default {
       address: 'Sidney No. 1 Lake Park',
     },
   ],
-  'POST /api/login/account': async (req: Request, res: Response) => {
-    const { password, username, type } = req.body;
+  'POST /api/user/signin': async (req: Request, res: Response) => {
+    const { account, password } = req.body;
     await waitTime(2000);
-    if (password === 'ant.design' && username === 'admin') {
+    if (account === 'admin') {
       res.send({
-        status: 'ok',
-        type,
-        currentAuthority: 'admin',
+        sid: [...Array(30)].map(() => Math.random().toString(36)[2]).join(''),
       });
       access = 'admin';
       return;
     }
-    if (password === 'ant.design' && username === 'user') {
+    if (account === 'user') {
       res.send({
-        status: 'ok',
-        type,
-        currentAuthority: 'user',
+        sid: [...Array(30)].map(() => Math.random().toString(36)[2]).join(''),
       });
       access = 'user';
       return;
     }
-    if (type === 'mobile') {
-      res.send({
-        status: 'ok',
-        type,
-        currentAuthority: 'admin',
-      });
-      access = 'admin';
-      return;
-    }
 
-    res.send({
-      status: 'error',
-      type,
-      currentAuthority: 'guest',
-    });
     access = 'guest';
+    res.status(401).send({
+      code: 401,
+      message: '账号或密码错误',
+    });
   },
-  'POST /api/login/outLogin': (req: Request, res: Response) => {
+  'POST /api/user/signout': (req: Request, res: Response) => {
     access = '';
     res.send({ data: {}, success: true });
   },
-  'POST /api/register': (req: Request, res: Response) => {
+  'POST /api/user/signup': (req: Request, res: Response) => {
     res.send({ status: 'ok', currentAuthority: 'user', success: true });
   },
   'GET /api/500': (req: Request, res: Response) => {
